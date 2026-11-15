@@ -415,3 +415,19 @@ details.oc2[open]{padding-bottom:10px}
 .shi .av{border-width:2px}.shi .si{min-width:0;flex:1}.shi b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sgi small{display:block}
 .sgi.on{background:var(--br)}
+
+/* ===== 9.3.0 : chronologie verticale du suivi client ===== */
+.tl{margin:12px 0 4px;position:relative}
+.tli{display:flex;gap:12px;position:relative;padding-bottom:18px;color:var(--mut)}
+.tli:last-child{padding-bottom:0}
+.tli:not(:last-child):before{content:"";position:absolute;left:11px;top:24px;bottom:0;width:2px;background:var(--br)}
+.tli.on:not(:last-child):before{background:#ff7900}
+.tli i{flex:0 0 24px;height:24px;border-radius:50%;border:2px solid var(--br);background:var(--card);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:13px;font-weight:700;color:#fff}
+.tli.on i{background:#ff7900;border-color:#ff7900;color:#000}
+.tli.ko i{background:var(--ko);border-color:var(--ko)}
+.tli b{display:block;color:var(--tx);font-size:14px}
+.tli:not(.on):not(.ko) b{color:var(--mut);font-weight:600}
+.tli.on b{color:#ff7900}
+.tli span{display:block;font-size:12px;color:var(--mut);margin-top:2px;text-transform:capitalize}
+.tli.ko span+span{text-transform:none}
+.tli.cur i{box-shadow:0 0 0 4px rgba(255,121,0,.22)}

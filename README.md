@@ -10,6 +10,10 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.3.0
+- Suivi client : chronologie verticale datée (reçue, validée, en livraison, livrée ou annulée) et carte « Détail de la commande » (montant, adresse, paiement à la livraison), inspirées du suivi Jumia.
+- Le lien client contient maintenant le montant, l’adresse et la date de commande ; renvoyer le lien pour les anciennes commandes.
+
 ## Changements v8.7.0
 - Saisie d’adresse : suggestions de types de voie (rue, boulevard, avenue, route, quartier…), d’adresses déjà utilisées et d’adresses OpenStreetMap ; suggestions de villes.
 - Bouton « Marquer le repère sur la carte » sous chaque adresse (commande, vendeur, ajout) : le point est gardé avec la commande ou le vendeur.

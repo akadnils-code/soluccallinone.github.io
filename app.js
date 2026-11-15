@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.2.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.3.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -2883,4 +2883,45 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
   else if(a==='cfgps'){if(!navigator.geolocation){cfMsg('Position indisponible sur cet appareil.');return}cfMsg('Localisation…');navigator.geolocation.getCurrentPosition(function(p){CP.lat=p.coords.latitude;CP.lng=p.coords.longitude;
       fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=fr&zoom=18&lat='+CP.lat+'&lon='+CP.lng).then(function(r){return r.json()}).then(function(j){if(j&&j.display_name)document.getElementById('cf-a').value=j.display_name.split(', ').slice(0,3).join(', ');cfMsg('✅ Position enregistrée')}).catch(function(){cfMsg('✅ Position enregistrée')})},function(){cfMsg('Localisation refusée.')},{enableHighAccuracy:true,timeout:15000})}
   else if(a==='cfok')cfSend(true);else if(a==='cfno')cfSend(false)},true);
+})();
+
+/* ===== 9.3.0 : suivi client façon marketplace (chronologie datée + détail de la commande) ===== */
+(function(){
+  var _tl2=tlink;
+  tlink=function(o,k){var u=_tl2(o,k);if(k!=='t')return u;
+    try{var i=u.indexOf('?t='),d=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(u.slice(i+3))))));
+      d.m=+o.amount||0;d.ad=o.address||'';d.od=o.date||'';return u.slice(0,i)+'?t='+encq(d)}catch(x){return u}};
+  function fdt(t){try{return new Date(t).toLocaleString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
+  function timeline(m,s,bad){
+    var evs=Object.keys(m.ev||{}).map(function(k){return m.ev[k]}).sort(function(a,b){return a.t-b.t}),when=[];
+    EVT.forEach(function(x,i){var f=evs.filter(function(v){return v.x===x})[0];when[i]=f?f.t:0});
+    var h='<div class="tl" id="tl">';
+    STV.forEach(function(lbl,i){
+      var on=!bad&&i<=s,cur=!bad&&i===s;
+      h+='<div class="tli'+(on?' on':'')+(cur?' cur':'')+'"><i>'+(on?'✓':'')+'</i><div><b>'+e(lbl)+'</b>'+(when[i]?'<span>'+e(fdt(when[i]))+'</span>':'')+'</div></div>'});
+    if(bad){var f=evs.filter(function(v){return /annul|refus/i.test(v.x)}).pop();
+      h+='<div class="tli ko"><i>✕</i><div><b>Annulée ou refusée</b>'+(f?'<span>'+e(fdt(f.t))+'</span>':'')+'<span>Malheureusement, cette commande n’a pas abouti. Contacte le service pour en savoir plus.</span></div></div>'}
+    return h+'</div>'}
+  function detail(m,s,bad){
+    var rows=[];
+    rows.push(['Produit',m.p]);rows.push(['Vendeur',m.v]);
+    if(m.od){var od=new Date(m.od+'T12:00:00');rows.push(['Commande passée le',isNaN(od)?m.od:od.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})])}
+    if(m.c)rows.push(['Livreur',m.c+(m.ve?' ('+m.ve+')':'')]);
+    rows.push(['Option de livraison','Livraison à domicile']);
+    rows.push(['Paiement',s===3&&!bad?'Réglé à la livraison':'À régler à la livraison']);
+    if(m.m)rows.push(['Montant',m.m+' dh']);
+    if(m.ad||m.cc)rows.push(['Adresse de livraison',[m.ad,m.cc].filter(Boolean).join(' - ')]);
+    return '<div class="card" id="tld"><h2>Détail de la commande</h2>'+rows.map(function(r){return '<div class="row" style="padding:5px 0;align-items:flex-start"><span class="mut">'+e(r[0])+'</span><span style="text-align:right;max-width:62%">'+e(r[1])+'</span></div>'}).join('')+'</div>'}
+  var _rc4=renderClient;
+  renderClient=function(){
+    _rc4();
+    try{var d=decq('t');if(!d||$('tl'))return;
+      var m=Object.assign({},d,CL),bad=!!m.bad,s=Math.max(0,m.s||0),app=$('app'),stp=app.querySelector('.stp');
+      if(!stp)return;
+      stp.outerHTML=timeline(m,s,bad);
+      Array.prototype.forEach.call(app.querySelectorAll('.card'),function(c){var h=c.querySelector('h2');if(h&&h.textContent==='Étapes')c.remove()});
+      var first=app.querySelector('.card');if(first&&!$('tld'))first.insertAdjacentHTML('afterend',detail(m,s,bad))
+    }catch(x){}
+  };
+  try{if(Q.get('t'))renderClient()}catch(x){}
 })();
