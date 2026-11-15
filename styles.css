@@ -446,3 +446,11 @@ details.oc2[open]{padding-bottom:10px}
 .mw>.btns:first-child,.mw>*:first-child{margin-top:4px}
 .mo-all{float:right;margin:0 0 6px;opacity:.8}
 details.mo>summary,details.oc2>summary{cursor:pointer;color:#ff7900;font-weight:600;font-size:13px}
+
+/* ===== 9.6.0 : menu Plus en groupes repliables ===== */
+details.mg{margin:8px 0}
+details.mg>summary{cursor:pointer;font-weight:700;font-size:15px;padding:10px 12px;background:var(--card);border:1px solid var(--br);border-radius:12px;list-style:none}
+details.mg>summary::-webkit-details-marker{display:none}
+details.mg>summary:after{content:"›";float:right;transition:transform .15s}
+details.mg[open]>summary:after{transform:rotate(90deg)}
+details.mg>.pg{margin-top:8px}

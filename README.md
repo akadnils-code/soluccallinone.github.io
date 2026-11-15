@@ -10,6 +10,10 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.6.0
+- Menu Plus : 5 groupes repliables (seul le premier est ouvert).
+- Automatisations : liste noire automatique après 2 refus à la livraison (désactivée par défaut) et alerte de colis en livraison depuis plus de 48 h.
+
 ## Changements v9.5.0 (écrans simplifiés)
 - Appels, Commandes, Suivi des colis : chaque carte n'affiche plus que l'essentiel ; le reste est rangé dans « Plus d'options ». Bouton « Tout déplier / replier » en haut de l'écran.
 

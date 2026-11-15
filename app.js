@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.5.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.6.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -3024,4 +3024,38 @@ document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttrib
   document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-mo]');if(!b)return;ev.stopPropagation();
     var all=[].slice.call($('app').querySelectorAll('details.oc2')),open=all.some(function(d){return !d.open});
     all.forEach(function(d){d.open=open})},true);
+})();
+
+/* ===== 9.6.0 : menu Plus rangé par groupes repliables + 2 automatisations (liste noire, livraison en retard) ===== */
+(function(){
+  if(typeof AUTO0==='object'){AUTO0.bl=0;AUTO0.lt=1}
+  var NEW=[['bl','Liste noire automatique après 2 refus à la livraison du même numéro'],['lt','Alerte si un colis est en livraison depuis plus de 48 h']];
+  function togg(k,l,A){return '<label class="row" style="color:var(--tx);font-size:14px;padding:6px 0"><span>'+l+'</span><input type="checkbox" style="width:auto;min-height:0;margin:0 0 0 8px" data-act="aut" data-k="'+k+'"'+(A[k]?' checked':'')+'></label>'}
+  function lateSince(o){var h=(o.hist||[]).filter(function(x){return x.x==='En cours de livraison'}).pop();return h?h.t:0}
+  function run(){
+    if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
+    var A=aset(),ch=false;
+    if(A.bl){var n={};DB.orders.forEach(function(o){if(o.delivery==='Refusé'&&o.phone)n[o.phone]=(n[o.phone]||0)+1});
+      Object.keys(n).forEach(function(p){if(n[p]>=2&&DB.bl.indexOf(p)<0){DB.bl.push(p);ch=true;if(typeof toast==='function')toast('Numéro '+p+' ajouté à la liste noire (2 refus).')}})}
+    if(A.lt){var late=DB.orders.filter(function(o){var t=lateSince(o);return o.delivery==='En cours'&&!o.late&&t&&Date.now()-t>1728e5});
+      late.forEach(function(o){o.late=1;ch=true});
+      if(late.length&&'Notification' in window&&Notification.permission==='granted')nt(late.length+(late.length>1?' colis en retard':' colis en retard'),late.slice(0,3).map(function(o){return o.name}).join(', ')+' : en livraison depuis plus de 48 h.')}
+    if(ch)save()}
+  setInterval(run,60000);setTimeout(run,4000);
+  window.__aioRun=run;
+  var _r6=render;
+  render=function(){_r6();
+    try{if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;var app=$('app');
+      // nouvelles automatisations, sous la dernière case existante
+      var rv=app.querySelector('input[data-act="aut"][data-k="rv"]'),A=aset();
+      if(rv&&!app.querySelector('input[data-k="bl"]')){var row=rv.closest('label');row.insertAdjacentHTML('afterend',NEW.map(function(x){return togg(x[0],x[1],A)}).join(''))}
+      // menu Plus : groupes repliables, seul le premier est ouvert au départ
+      if(S.tab==='more'&&!app.querySelector('details.mg')){
+        var secs=[].slice.call(app.querySelectorAll(':scope > .sec'));
+        secs.forEach(function(s,i){var pg=s.nextElementSibling;if(!pg||!pg.classList.contains('pg'))return;
+          var key='g-'+s.textContent.trim(),d=document.createElement('details');d.className='mg';d.setAttribute('data-om',key);
+          if(OM[key]===undefined?i===0:OM[key])d.open=true;
+          var sm=document.createElement('summary');sm.textContent=s.textContent+' ('+pg.querySelectorAll('.tile').length+')';d.appendChild(sm);
+          app.insertBefore(d,s);d.appendChild(pg);s.parentNode.removeChild(s)})}
+    }catch(x){}};
 })();
