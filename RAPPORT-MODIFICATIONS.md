@@ -1,6 +1,6 @@
 
 # Version 7.6.0 : structure des fichiers
-`index.html` (page), `styles.css` (styles), `app.js` (logique), `sw.js` (cache cod-v13, liste mise à jour), `manifest.webmanifest`, `privacy.html`, `database_rules.json`. Logique inchangée : le code a seulement été déplacé. Syntaxe JS vérifiée ; aucun navigateur disponible ici, donc affichage non testé.
+`index.html` (page), `styles.css` (styles), `app.js` (logique), `sw.js` (cache cod-v13, liste mise à jour), `manifest.webmanifest`, `privacy.html`, `database.rules.json`. Logique inchangée : le code a seulement été déplacé. Syntaxe JS vérifiée ; aucun navigateur disponible ici, donc affichage non testé.
 
 # Version 7.5.0 : code de livraison vérifié par le serveur
 

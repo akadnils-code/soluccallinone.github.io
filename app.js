@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.3.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.3.1',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -508,7 +508,8 @@ function lmFlush(){
 }
 var EVT=['Commande reçue, en attente de validation','Commande validée','Le livreur est en route','Colis livré'];
 function tid(o){if(!o.tid){o.tid=Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(16)),function(b){return ('0'+b.toString(36)).slice(-2)}).join('');save()}return o.tid}
-function dbu(db,id){return db.replace(/\/$/,'')+'/track/'+id+'.json'}
+function dbr(db){var u=String(db||'').trim().replace(/\/$/,'');if(!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)?\.(firebaseio\.com|firebasedatabase\.app)$/i.test(u))throw new Error('Adresse Firebase invalide');return u}
+function dbu(db,id){return dbr(db)+'/track/'+encodeURIComponent(id)+'.json'}
 function fbp(db,id,b){try{fetch(dbu(db,id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).catch(function(){})}catch(e){}}
 function fbg(db,id,cb){try{fetch(dbu(db,id)).then(function(r){return r.json()}).then(cb).catch(function(){})}catch(e){}}
 function pub(o){var sp=sec(o);var n=Date.now(),st=stage(o),b={v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:st,bad:bad(o)?1:0,c:o.courier||'',ve:vehOf(o.courier),t:n};b['ev/e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};if(st===3){b.dc=dcs(o);var db_=DB.set.db,id_=tid(o);sp.then(function(){fbp(db_,id_,b)})}else fbp(DB.set.db,tid(o),b)}
@@ -846,7 +847,7 @@ function boot(){
 var RS={n:0},LK='',PT=0,LT='',IP=null;
 function dcode(d){return String((d&&d.dc)||'')}
 function dcs(o){if(!o.dc){o.dc=String(100000+crypto.getRandomValues(new Uint32Array(1))[0]%900000);save()}return o.dc}
-function sec(o){try{if(DB.set.db&&o.vendor!==undefined){return fetch(DB.set.db.replace(/\/$/,'')+'/secret/'+tid(o)+'/ck.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dcs(o))}).catch(function(){})}}catch(e){}return Promise.resolve()}
+function sec(o){try{if(DB.set.db&&o.vendor!==undefined){return fetch(dbr(DB.set.db)+'/secret/'+tid(o)+'/ck.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dcs(o))}).catch(function(){})}}catch(e){}return Promise.resolve()}
 function sdel(dk,code,ok,ko){var n=Date.now(),b={s:3,dc:String(code),t:n};b['ev/e'+n]={t:n,x:'Colis livré'};try{fetch(dbu(dk.db,dk.tid),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){if(r.ok)ok();else ko(r.status)}).catch(function(){ko(0)})}catch(e){ko(0)}}
 function toast(m){var x=document.createElement('div');x.className='tst';x.textContent=m;document.body.appendChild(x);setTimeout(function(){x.remove()},3200)}
 function conf(){var c=['#d4af37','#15803d','#1d4ed8','#dc2626','#f6dc85'];for(var i=0;i<26;i++){var p=document.createElement('i');p.className='cf';p.style.cssText='left:'+Math.random()*100+'vw;background:'+c[i%5]+';animation-delay:'+Math.random()*.6+'s';document.body.appendChild(p);setTimeout(function(q){q.remove()},3400,p)}}
@@ -2260,7 +2261,7 @@ function bioUnlock(){var id=localStorage.getItem('cod_bio');if(!id||!ST)return;
    .then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(ST.iv)},k,ub64(ST.ct)).then(function(pt){DB=fix(JSON.parse(dec.decode(pt)));K=k;SALT=ub64(ST.salt);CIT=ST.it||IT;S.locked=false;S.msg='';render()})})
    .catch(function(){S.msg='Empreinte / visage indisponible : utilise ton code.';render()})}
 var IMPB=0;
-function impPull(man){var db=DB&&DB.set.db,k=DB&&DB.set.ikey;if(!db||!k||IMPB)return man&&toast('Renseigne d’abord le lien Firebase (Compte → Paramètres → Connexions).');IMPB=1;var u=db.replace(/\/$/,'')+'/import/'+k;
+function impPull(man){var db=DB&&DB.set.db,k=DB&&DB.set.ikey;if(!db||!k||IMPB)return man&&toast('Renseigne d’abord le lien Firebase (Compte → Paramètres → Connexions).');IMPB=1;var u;try{u=dbr(db)+'/import/'+encodeURIComponent(k)}catch(x){IMPB=0;return man&&toast('Adresse Firebase invalide.')}
   fetch(u+'.json').then(function(r){return r.json()}).then(function(d){IMPB=0;if(!d||typeof d!=='object')return man&&toast('Aucune nouvelle commande.');var n=0,x=0;
     Object.keys(d).slice(0,50).forEach(function(id){var o=cxIn(d[id]||{}),r=(o.xid&&xidHas(o.xid))?'dup':addOrder(String(o.vendor||DB.set.ivendor||'Boutique').slice(0,60),String(o.name||'').slice(0,80),String(o.phone||''),String(o.product||'').slice(0,120),String(o.address||'').slice(0,160),{city:String(o.city||'').slice(0,40),amount:+o.amount||0,channel:String(o.source||'Import').slice(0,30),xid:String(o.xid||'')});
       r==='ok'?n++:x++;fetch(u+'/'+encodeURIComponent(id)+'.json',{method:'DELETE'}).catch(function(){})});
@@ -2711,7 +2712,7 @@ function impCard(){var s=DB.set;if(!s.ikey){s.ikey=b64(rnd(18)).replace(/[^A-Za-
    +'<button class="b pri full" data-cx="an">Analyser</button></details>'+pv
    +'<details class="oc2"><summary>Réception automatique (webhook)</summary><p class="mut">Les commandes de ta boutique arrivent toutes seules dans l’appli (synchronisation cloud activée). Dans ta boutique, ajoute un webhook « commande créée » vers l’adresse ci-dessous, terminée par ?s=youcan (ou storeino, lightfunnels, shopify…) pour indiquer la plateforme.</p>'
    +(window.cloudWebhook?'':'<div class="msg err">Module cloud indisponible.</div>')
-   +(wk?'<label>Adresse du webhook</label><input readonly value="'+e(wk)+'" onclick="this.select()">':'')
+   +(wk?'<label>Adresse du webhook</label><input readonly value="'+e(wk)+'" data-sel="1">':'')
    +'<button class="b pri full" style="margin-top:10px" data-cx="wh">'+(wk?'Mettre à jour':'Activer la réception automatique')+'</button>'
    +(s.db?'<button class="b full" style="margin-top:6px" data-imp="1">Vérifier les nouvelles commandes (Firebase)</button>':'')+'</details></div>'}
 document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-cx]');if(!t||!DB)return;var a=t.getAttribute('data-cx');
@@ -2916,7 +2917,7 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
   renderClient=function(){
     _rc4();
     try{var d=decq('t');if(!d||$('tl'))return;
-      var m=Object.assign({},d,CL),bad=!!m.bad,s=Math.max(0,m.s||0),app=$('app'),stp=app.querySelector('.stp');
+      var m=Object.assign({},d,CL),bad=!!m.bad,s=Math.max(0,m.s||0),app=$('app'),stp=app.querySelector('.stp')||app.querySelector('.s-Annulé');
       if(!stp)return;
       stp.outerHTML=timeline(m,s,bad);
       Array.prototype.forEach.call(app.querySelectorAll('.card'),function(c){var h=c.querySelector('h2');if(h&&h.textContent==='Étapes')c.remove()});
@@ -2925,3 +2926,6 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
   };
   try{if(Q.get('t'))renderClient()}catch(x){}
 })();
+
+/* 9.3.1 : sélection automatique des champs en lecture seule (remplace onclick inline, compatible CSP) */
+document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttribute&&t.getAttribute('data-sel')&&t.select)t.select()},true);

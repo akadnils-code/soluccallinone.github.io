@@ -10,6 +10,11 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.3.1 (sécurité)
+- Politique de sécurité du contenu (CSP) dans index.html ; adresse Firebase vérifiée (firebaseio.com / firebasedatabase.app) avant tout envoi.
+- Suivi d’une commande annulée : chronologie corrigée.
+- Dépôt nettoyé : plus de clé de signature, d’APK ni de doublons ; .gitignore ajouté. Règles Firebase : utiliser uniquement database.rules.json.
+
 ## Changements v9.3.0
 - Suivi client : chronologie verticale datée (reçue, validée, en livraison, livrée ou annulée) et carte « Détail de la commande » (montant, adresse, paiement à la livraison), inspirées du suivi Jumia.
 - Le lien client contient maintenant le montant, l’adresse et la date de commande ; renvoyer le lien pour les anciennes commandes.

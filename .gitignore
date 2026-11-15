@@ -1,0 +1,11 @@
+# Ne jamais publier de clés de signature ni de paquets Android
+*.keystore
+*.jks
+*.p12
+*.pem
+signing-key-info.txt
+*.zip
+*.apk
+*.aab
+node_modules/
+.env
