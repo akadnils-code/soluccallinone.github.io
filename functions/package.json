@@ -1,0 +1,16 @@
+{
+  "name": "aio-tracking-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "24"
+  },
+  "scripts": {
+    "lint": "node --check index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1",
+    "firebase-functions": "^7.4.0"
+  }
+}

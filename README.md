@@ -1,10 +1,33 @@
-# All In One — Amk Logistique (v8.7.0)
+# All In One — Amk Logistique (v9.4.0)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
 ## Fichiers à mettre à la racine du dépôt GitHub
 index.html · styles.css · app.js · cloud.js · sw.js · manifest.webmanifest · privacy.html · icon-192.png · icon-512.png · icon-512-maskable.png
 Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, README.md.
+
+## Déployer le suivi sécurisé Firebase
+
+Le suivi en direct repose désormais sur `functions/track`. Les règles Firebase bloquent les lectures et écritures directes des suivis ; le code de livraison n’est remis qu’au lien client autorisé. Les anciens liens de suivi ne sont plus valides : après déploiement, renvoie les nouveaux liens client et livreur depuis l’application.
+
+1. Installe Firebase CLI, connecte-toi (`firebase login`) et sélectionne ton projet (`firebase use --add`). Le projet doit avoir Realtime Database et le plan Firebase requis pour Cloud Functions.
+2. Dans `functions/.env`, définis `TRACKING_DATABASE_URL` avec l’URL exacte de ta Realtime Database (copie `functions/.env.example`). Ne publie jamais ce fichier.
+3. Crée une clé propriétaire aléatoire (par exemple `openssl rand -base64 48`) et conserve-la en lieu sûr. Configure-la comme secret : `firebase functions:secrets:set TRACKING_OWNER_KEY`.
+4. Installe les dépendances et déploie les règles ainsi que la fonction :
+   ```sh
+   npm --prefix functions install
+   firebase deploy --only database,functions:track
+   ```
+5. Dans l’application, ouvre Réglages → Connexions → Suivi et renseigne l’URL de la base, l’URL de la fonction (`https://europe-west1-ID_DU_PROJET.cloudfunctions.net/track`) et la même clé propriétaire. Utilise « Tester la connexion ».
+6. Vérifie le suivi sur un appareil client et un appareil livreur avant d’utiliser les nouveaux liens en production.
+
+La clé propriétaire donne les droits de publication et de lecture des suivis : elle doit rester dans l’application propriétaire, protégée par le code PIN de l’appareil. Si elle est compromise, remplace le secret Firebase et la clé dans l’application, puis republie la fonction.
+
+## Changements v9.4.0 (sécurisation du suivi)
+- Les lectures, publications, statuts, positions GPS et validations de livraison passent par une Cloud Function avec des jetons distincts client/livreur.
+- Le code de livraison n’est plus dans le lien Base64 ; il est renvoyé uniquement au client autorisé. Les essais incorrects sont comptés et bloqués côté serveur après trois erreurs pendant 30 minutes.
+- Les règles Realtime Database interdisent désormais l’accès direct aux données de suivi et à l’authentification privée. Voir « Déployer le suivi sécurisé Firebase ».
+- La pagination des commandes cloud a été stabilisée pour éviter de répéter une page lorsque plusieurs lignes partagent le même horodatage.
 
 ## Mise à jour depuis Android
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
@@ -63,11 +86,11 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 Appels et WhatsApp « en un mot » avec mémo de rappel · commandes · suivi de livraison (carte, simulation, preuve photo GPS) · avis 1 à 5 · finances et rapport hebdomadaire · import automatique · verrouillage par code, empreinte ou visage · arabe / anglais (partiel).
 
 ## Sécurité
-- Code de livraison limité à 3 essais par mission (blocage 30 min), appliqué dans l'appli.
+- Code de livraison limité à 3 essais par mission (blocage serveur de 30 min après déploiement de la fonction).
 - Verrouillage par code PIN (chiffrement AES-GCM) ; empreinte / visage via le système du téléphone, sans jamais quitter l'appareil.
 
 ## Limites connues
-- La limite des 3 essais est appliquée dans l'appli, pas côté serveur : une protection serveur complète demande une Cloud Function Firebase.
+- Le suivi sécurisé et le blocage serveur ne sont actifs qu’après déploiement de la Cloud Function et des règles Firebase, puis configuration de la clé dans l’application. Les anciens liens doivent être réémis.
 - Les réponses WhatsApp des clients ne sont pas lues automatiquement (API WhatsApp Business payante).
 - NFC, caméra, GPS et Firebase réels : à tester sur de vrais téléphones. Le NFC ne fonctionne pas sur iPhone.
 - Conformité loi 09-08 : voir GUIDE-MISE-EN-SERVICE.md (déclaration CNDP et autorisation de transfert à faire).

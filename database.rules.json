@@ -5,8 +5,8 @@
 
     "track": {
       "$id": {
-        ".read": "$id.matches(/^[a-z0-9]{24,48}$/)",
-        ".write": "$id.matches(/^[a-z0-9]{24,48}$/) && (newData.exists() || !data.child('s').exists())",
+        ".read": false,
+        ".write": false,
         ".validate": "newData.hasChildren()",
         "v":   {".validate": "newData.isString() && newData.val().length <= 80"},
         "vc":  {".validate": "newData.isString() && newData.val().length <= 60"},
@@ -21,9 +21,8 @@
         "bad": {".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1"},
         "t":   {".validate": "newData.isNumber()"},
         "pt":  {".validate": "newData.isNumber()"},
-        "dc":  {".validate": "newData.isString() && newData.val().matches(/^[0-9]{6}$/)"},
         "s": {
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3 && (newData.val() < 3 || data.val() === 3 || (newData.parent().child('dc').isString() && newData.parent().child('dc').val() === root.child('secret').child($id).child('ck').val()))"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
         },
         "pos": {
           "0": {".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"},
@@ -43,12 +42,13 @@
     },
 
     "secret": {
-      "$id": {
-        "ck": {
-          ".write": "$id.matches(/^[a-z0-9]{24,48}$/) && newData.isString() && newData.val().matches(/^[0-9]{6}$/) && (!data.exists() || data.val() === newData.val())",
-          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{6}$/)"
-        }
-      }
+      ".read": false,
+      ".write": false
+    },
+
+    "_privateTrackAuth": {
+      ".read": false,
+      ".write": false
     },
 
     "import": {

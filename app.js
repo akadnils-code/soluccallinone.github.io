@@ -1,10 +1,10 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.3.1',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.4.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
-var DEFSET={rc:0,db:'',tiles:'',ckey:'',net:[],deals:[],wallet:[],sim:{cpw:200,tc:70,td:80,nv:5,pa:60,pv:90,q:100},cf:5,bn:6,up:12,trial:30,dth:500,dpc:20,minc:100,phone:'',rib:'',holder:'',insta:'',pt:'',pco:'',pe:'',pc:'',pphoto:'',tpl:DEFTPL,script:DEFSCRIPT,lang:'fr',lastBackup:0};
+var DEFSET={rc:0,db:'',trackApi:'',trackOwnerKey:'',tiles:'',ckey:'',net:[],deals:[],wallet:[],sim:{cpw:200,tc:70,td:80,nv:5,pa:60,pv:90,q:100},cf:5,bn:6,up:12,trial:30,dth:500,dpc:20,minc:100,phone:'',rib:'',holder:'',insta:'',pt:'',pco:'',pe:'',pc:'',pphoto:'',tpl:DEFTPL,script:DEFSCRIPT,lang:'fr',lastBackup:0};
 var DB=null,K=null,SALT=null,ST=null,seq=0,hiddenAt=0;
 var S={tab:'home',sub:'list',msg:'',err:false,del:'',locked:false,vendor:'',sf:'',q:'',cx:'',edit:'',vsel:'',vform:false,inv:'',csvx:'',lk:null};
 var Q=new URLSearchParams(location.search);
@@ -303,7 +303,7 @@ function setv(){
    +'<p class="mut">Une commande livrée rapporte '+ex()+' dh ('+s.cf+' + '+s.bn+'). Tu es payé pour ton travail même si le colis est refusé. Le tarif est figé à la confirmation : changer ces valeurs n’affecte jamais les commandes passées.</p></div>'
    +'<div class="card"><h2>Messages types</h2><label>Relance WhatsApp</label><textarea data-set="tpl">'+e(s.tpl)+'</textarea><p class="mut">[boutique] et [produit] sont remplacés.</p><label>Script d’appel</label><textarea data-set="script">'+e(s.script)+'</textarea></div>';
   if(sp==='s')return mb()+seg
-   +'<div class="card"><h2>Verrouillage par code</h2>'+(CRY?'<p class="mut">'+(K?'Données chiffrées sur cet appareil (AES-256). Verrouillage automatique après 5 minutes en arrière-plan.':'Un code chiffre tes données (AES-256) et verrouille l’application. Si tu l’oublies, les données sont perdues : télécharge une sauvegarde avant.')+'</p><input type="password" id="npin" autocomplete="new-password" placeholder="Nouveau code (6 chiffres ou plus)"><button class="b pri full" data-act="setpin">'+(K?'Changer le code':'Activer le code')+'</button>'+(K?'<button class="b full" style="margin-top:6px" data-act="lock">Verrouiller maintenant</button><button class="b full" style="margin-top:6px" data-act="nopin">Retirer le code</button>':''):'<p class="mut">Le chiffrement n’est pas disponible dans ce contexte (HTTPS requis).</p>')+'</div>'
+   +'<div class="card"><h2>Verrouillage par code</h2>'+(CRY?'<p class="mut">'+(K?'Données chiffrées sur cet appareil (AES-256). Verrouillage automatique après 5 minutes en arrière-plan.':'Un code chiffre tes données (AES-256) et verrouille l’application. Si tu l’oublies, les données sont perdues : télécharge une sauvegarde avant.')+'</p><input type="password" id="npin" autocomplete="new-password" placeholder="Nouveau code (8 caractères minimum)"><button class="b pri full" data-act="setpin">'+(K?'Changer le code':'Activer le code')+'</button>'+(K?'<button class="b full" style="margin-top:6px" data-act="lock">Verrouiller maintenant</button><button class="b full" style="margin-top:6px" data-act="nopin">Retirer le code</button>':''):'<p class="mut">Le chiffrement n’est pas disponible dans ce contexte (HTTPS requis).</p>')+'</div>'
    +bioCard()
    +'<div class="card"><h2>Sauvegarde & restauration</h2><p class="mut">Tout reste sur cet appareil. Télécharge une sauvegarde chaque semaine. L’export Excel se trouve dans Finances & soldes.</p><div class="btns"><button class="b pri" data-act="bak">'+ico('dl','s')+' Télécharger la sauvegarde</button><button class="b" data-act="csvx">Copier en CSV</button></div>'+(S.csvx?'<textarea id="csvxt" readonly>'+e(S.csvx)+'</textarea>':'')+'<label style="display:block;margin-top:10px">Restaurer une sauvegarde (.json)</label><input type="file" id="rs" accept=".json,application/json"><button class="b ko full" style="margin-top:8px" data-act="wipe">'+(S.del==='wipe'?'Confirmer : tout effacer ?':'Effacer toutes les données')+'</button></div>'
    +'<div class="card"><h2>Données de démonstration</h2><p class="mut">Remplit l’appli de fausses commandes pour tester ou filmer une démo. Seules les données marquées « démo » sont supprimées par le bouton de retrait.</p><div class="btns"><button class="b pri" data-act="demoon">Charger la démo</button><button class="b ko" data-act="demooff">Retirer la démo</button></div></div>'+foot;
@@ -509,12 +509,31 @@ function lmFlush(){
 var EVT=['Commande reçue, en attente de validation','Commande validée','Le livreur est en route','Colis livré'];
 function tid(o){if(!o.tid){o.tid=Array.prototype.map.call(crypto.getRandomValues(new Uint8Array(16)),function(b){return ('0'+b.toString(36)).slice(-2)}).join('');save()}return o.tid}
 function dbr(db){var u=String(db||'').trim().replace(/\/$/,'');if(!/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)?\.(firebaseio\.com|firebasedatabase\.app)$/i.test(u))throw new Error('Adresse Firebase invalide');return u}
-function dbu(db,id){return dbr(db)+'/track/'+encodeURIComponent(id)+'.json'}
-function fbp(db,id,b){try{fetch(dbu(db,id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).catch(function(){})}catch(e){}}
-function fbg(db,id,cb){try{fetch(dbu(db,id)).then(function(r){return r.json()}).then(cb).catch(function(){})}catch(e){}}
-function pub(o){var sp=sec(o);var n=Date.now(),st=stage(o),b={v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:st,bad:bad(o)?1:0,c:o.courier||'',ve:vehOf(o.courier),t:n};b['ev/e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};if(st===3){b.dc=dcs(o);var db_=DB.set.db,id_=tid(o);sp.then(function(){fbp(db_,id_,b)})}else fbp(DB.set.db,tid(o),b)}
+function trackKey(){return b64(crypto.getRandomValues(new Uint8Array(32))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function trackKeys(o){var k=o.trackAuth||{},changed=false;['client','courier'].forEach(function(n){if(!k[n]){k[n]=trackKey();changed=true}});if(changed){o.trackAuth=k;save()}return k}
+function trackApiUrl(u){try{var x=new URL(String(u||''));return x.protocol==='https:'&&/^[a-z0-9-]+-[a-z0-9-]+\.cloudfunctions\.net$/i.test(x.hostname)&&x.pathname==='/track'&&!x.search&&!x.hash?x.href.replace(/\/$/,''):''}catch(x){return''}}
+function trackCall(api,body){var u=trackApiUrl(api);if(!u)return Promise.reject(new Error('URL de fonction Firebase invalide.'));
+  return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var x=new Error(j.error||'Erreur du service de suivi ('+r.status+').');x.status=r.status;throw x}return j})})}
+function trackPayload(id,b){var t=Date.now();
+  if(Q.get('t')){var c=decq('t');return c&&c.tid===id?{action:'clientUpdate',id:id,clientKey:c.ck,patch:b}:null}
+  if(Q.get('l')){var l=decq('l');return l&&l.tid===id?{action:'courierUpdate',id:id,courierKey:l.dk,patch:b}:null}
+  var o=DB&&DB.orders.filter(function(x){return x.tid===id})[0];if(!o)return null;
+  var k=trackKeys(o);return{action:'publish',db:dbr(DB.set.db),ownerKey:DB.set.trackOwnerKey,clientKey:k.client,courierKey:k.courier,deliveryCode:dcs(o),id:id,patch:b,t:t}}
+function fbp(db,id,b){var p=trackPayload(id,b);if(!p)return;
+  var api=Q.get('t')?(decq('t')||{}).api:Q.get('l')?(decq('l')||{}).api:DB&&DB.set.trackApi;
+  if(!api)return;
+  trackCall(api,p).catch(function(x){if(window.console)console.error('Suivi Firebase :',x.message)})}
+function fbg(db,id,cb){var p,api;
+  if(Q.get('t')){var c=decq('t');if(!c||c.tid!==id)return;p={action:'read',id:id,clientKey:c.ck};api=c.api}
+  else if(Q.get('l')){var l=decq('l');if(!l||l.tid!==id)return;p={action:'read',id:id,courierKey:l.dk};api=l.api}
+  else{var o=DB&&DB.orders.filter(function(x){return x.tid===id})[0];if(!o)return;api=DB.set.trackApi;p={action:'read',id:id,ownerKey:DB.set.trackOwnerKey,db:dbr(DB.set.db)}}
+  if(!api)return;
+  trackCall(api,p).then(cb).catch(function(x){if(window.console)console.error('Lecture du suivi :',x.message)})}
+function pub(o){if(!o||!DB.set.db||!trackApiUrl(DB.set.trackApi)||!DB.set.trackOwnerKey)return;
+  var n=Date.now(),st=stage(o),b={v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:st,bad:bad(o)?1:0,c:o.courier||'',ve:vehOf(o.courier),t:n};
+  b['ev/e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};fbp(DB.set.db,tid(o),b)}
 function poll(){if(document.hidden)return;PT++;
-  if(!DB||!DB.set.db||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
+  if(!DB||!DB.set.db||!DB.set.trackApi||!DB.set.trackOwnerKey||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
   DB.orders.filter(function(o){return o.tid&&!bad(o)&&stage(o)>=1&&(stage(o)<3||(stage(o)===3&&!o.rt&&PT%12===0))}).slice(-25).forEach(function(o){fbg(DB.set.db,o.tid,function(r){
     if(!r)return;var ch=false;
     if(r.bad&&!bad(o)){setDel(o,'Refusé');ch=true}else if(r.s===3&&stage(o)<3){if(aset().rv===0)setDel(o,'Livré');else if(!o.rd)o.rd=1;ch=true}else if(r.s===2&&stage(o)<2){setDel(o,'En cours');ch=true}
@@ -532,13 +551,14 @@ function decq(k){try{return JSON.parse(decodeURIComponent(escape(atob(Q.get(k)))
 function vaddr(o){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0];return v?(v.addr||''):''}
 function vcity(o){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0];return v?v.city||'':''}
 function tlink(o,k){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0]||{},base=location.href.split(/[?#]/)[0];
-  sec(o);if(k==='t')return base+'?t='+encq({dc:dcs(o),v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:stage(o),w:DB.set.phone,c:o.courier||'',ve:vehOf(o.courier),db:DB.set.db||'',tid:tid(o)});
-  return base+'?l='+encq({id:o.id,v:o.vendor,vp:v.phone||'',va:v.addr||'',vc:vcity(o),n:o.name,cp:o.phone,ca:o.address||'',cc:o.city||'',p:o.product,m:o.amount||0,w:DB.set.phone,s:stage(o),ve:vehOf(o.courier),db:DB.set.db||'',tid:tid(o)})}
+  var api=trackApiUrl(DB.set.trackApi),keys=trackKeys(o);if(api)pub(o);
+  if(k==='t')return base+'?t='+encq({v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:stage(o),w:DB.set.phone,c:o.courier||'',ve:vehOf(o.courier),db:api?DB.set.db||'':'',api:api,ck:api?keys.client:'',tid:tid(o)});
+  return base+'?l='+encq({id:o.id,v:o.vendor,vp:v.phone||'',va:v.addr||'',vc:vcity(o),n:o.name,cp:o.phone,ca:o.address||'',cc:o.city||'',p:o.product,m:o.amount||0,w:DB.set.phone,s:stage(o),ve:vehOf(o.courier),db:api?DB.set.db||'':'',api:api,dk:api?keys.courier:'',tid:tid(o)})}
 var CL={},CLT=0;
 function fmt(n){var m=Math.round(n);return m<60?m+' min':Math.floor(m/60)+' h '+(m%60?m%60+' min':'')}
 function renderClient(){
   var d=decq('t');if(!d)return solo('<h1>Suivi de commande</h1><div class="card"><p class="mut">Lien invalide.</p></div>');
-  if(d.db&&d.tid&&!CLT){var go=function(){fbg(d.db,d.tid,function(r){if(r){CL=r;renderClient()}})};CLT=setInterval(go,4000);go()}
+  if(d.api&&d.tid&&!CLT){var go=function(){fbg(d.db,d.tid,function(r){if(r){CL=r;renderClient()}})};CLT=setInterval(go,4000);go()}
   var m=Object.assign({},d,CL),bd=!!m.bad,s=Math.max(0,m.s||0),A=cfind(m.vc),B=cfind(m.cc),lv=inMA(m.pos)?m.pos:null,km=0,mins=0,pc=-1;
   if(A&&B){var ri=roadInfo(A,B),fr=lv?hav(lv,B)/Math.max(1,hav(A,B)):1;km=ri?ri.km*fr:hav(lv||A,B)*1.25;mins=ri?ri.min*fr*1.1:km/45*60;pc=lv?Math.round(100*Math.max(0,Math.min(1,1-hav(lv,B)/Math.max(1,hav(A,B))))):-1}
   var evs=Object.keys(m.ev||{}).map(function(k){return m.ev[k]}).sort(function(a,b){return b.t-a.t}),isLive=m.pt&&Date.now()-m.pt<45000;
@@ -547,11 +567,11 @@ function renderClient(){
    +mapView({ve:m.ve,vc:m.vc,cc:m.cc,s:bd?0:s,live:lv})
    +(evs.length?'<div class="card" style="margin-top:10px"><h2>Étapes</h2>'+evs.map(function(ev){var t=new Date(ev.t);return '<div class="row" style="padding:4px 0"><span>'+e(ev.x)+'</span><span class="mut">'+('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+'</span></div>'}).join('')+'</div>':'')
    +(m.w?'<a class="b pri" style="display:block;margin-top:10px" target="_blank" rel="noopener" href="'+wa(m.w,'Bonjour, une question sur ma commande « '+m.p+' ».')+'">'+ico('chat')+' Contacter le service</a>':'')
-   +'<p class="mut">'+(d.db?'Cette page se met à jour toute seule.':'Cette page montre l’état au moment de l’envoi. Tu reçois un nouveau lien à chaque étape.')+' Distance et heure d’arrivée sont des estimations.</p>');
+   +'<p class="mut">'+(d.api?'Cette page se met à jour toute seule.':'Cette page montre l’état au moment de l’envoi. Tu reçois un nouveau lien à chaque étape.')+' Distance et heure d’arrivée sont des estimations.</p>');
 }
 function renderCourier(){
   var d=decq('l');if(!d)return solo('<h1>Mission</h1><div class="card"><p class="mut">Lien invalide.</p></div>');
-  var gm=function(q){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},msg=function(st){return wa(d.w,'SUIVI '+d.id+' '+st+'\n'+d.p+' · '+d.n)},lv=!!(d.db&&d.tid);
+  var gm=function(q){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},msg=function(st){return wa(d.w,'SUIVI '+d.id+' '+st+'\n'+d.p+' · '+d.n)},lv=!!(d.api&&d.dk&&d.tid);
   var pos=CS.gps?'https://maps.google.com/?q='+CS.gps[0]+','+CS.gps[1]:'',cs=CS.s!=null?CS.s:d.s,B=cfind(d.cc),kmc=(inMA(CS.gps)&&B)?Math.round(hav(CS.gps,B)*1.25):0;
   var st=function(v,l,c){return lv?'<button class="b '+c+'" data-act="cst" data-v="'+v+'">'+l+'</button>':'<a class="b '+c+'" target="_blank" rel="noopener" href="'+msg(v)+'">'+l+'</a>'};
   solo('<h1>Ma mission</h1><div class="card"><b>'+e(d.p)+'</b>'+(d.m?'<div class="kpi" style="margin-top:8px"><span class="mut">À encaisser</span><b>'+fm(+d.m||0)+' dh</b></div>':'')+(CS.ok?'<p class="live">'+CS.ok+'</p>':'')+'</div>'
@@ -658,7 +678,7 @@ function morev(){
 function toolv(){return mb()+'<div class="sec">QR code &amp; NFC</div>'+qacc()}
 function setLive(){
   var s=DB.set;
-  return '<div class="card"><h2>Suivi des colis en temps réel</h2><label>Adresse de la base Firebase (Realtime Database)</label><input data-set="db" value="'+e(s.db||'')+'" placeholder="https://ton-projet-default-rtdb.europe-west1.firebasedatabase.app"><p class="mut">'+(s.db?'Suivi en direct activé : le client, le livreur et toi voient les mêmes étapes en temps réel.':'Sans cette adresse, le suivi marche par liens et messages.')+' Colle les règles du fichier database.rules.json dans Firebase (Règles) : elles empêchent de lister ou d’écraser les suivis des autres.</p>'+(s.db?'<button class="b" data-act="dbtest">Tester la connexion</button><p class="mut">'+e(S.dbt||'')+'</p>':'')+'</div>';
+  return '<div class="card"><h2>Suivi des colis en temps réel</h2><label>Adresse de la base Firebase (Realtime Database)</label><input data-set="db" value="'+e(s.db||'')+'" placeholder="https://ton-projet-default-rtdb.europe-west1.firebasedatabase.app"><label>URL de la fonction sécurisée</label><input data-set="trackApi" value="'+e(s.trackApi||'')+'" placeholder="https://europe-west1-projet.cloudfunctions.net/track"><label>Clé propriétaire de la fonction</label><input type="password" autocomplete="off" data-set="trackOwnerKey" value="'+e(s.trackOwnerKey||'')+'" placeholder="Clé définie avec firebase functions:secrets:set"><p class="mut">Le suivi temps réel exige la fonction Firebase déployée et cette clé propriétaire. Les règles database.rules.json bloquent les écritures directes. Après la mise à jour des règles, renvoie aux clients et livreurs les nouveaux liens sécurisés. Active le verrouillage par code pour protéger cette clé sur l’appareil.</p>'+(s.db&&s.trackApi&&s.trackOwnerKey?'<button class="b" data-act="dbtest">Tester la connexion</button><p class="mut">'+e(S.dbt||'')+'</p>':'')+'</div>';
 }
 function setMap(){
   var s=DB.set;
@@ -683,14 +703,14 @@ function xact(a,t,id,o,g){
   else if(a==='demooff'){DB.orders=DB.orders.filter(function(x){return !x.demo});DB.vend=DB.vend.filter(function(x){return !x.demo});DB.cour=DB.cour.filter(function(x){return !x.demo});S.msg='Données de démonstration supprimées. Vos vraies données sont intactes.';return 1}
   else if(a==='pubo'){if(o&&DB.set.db)pub(o);return 2;}
   else if(a==='mz'){var zv=t.getAttribute('data-v');if(zv==='+')S.mz=Math.min(4,(S.mz||1)*1.6);else if(zv==='-')S.mz=Math.max(.5,(S.mz||1)*.6);else{S.full=!S.full;S.mz=1}rr();return 2;}
-  else if(a==='cst'){var cd=decq('l');if(cd&&cd.db){var cv2=t.getAttribute('data-v'),nw=Date.now(),bb={t:nw};if(cv2==='En cours'){bb.s=2;CS.s=2;bb['ev/e'+nw]={t:nw,x:'Colis récupéré, le livreur est en route'}}else if(cv2==='Livré'){return 2}else{bb.bad=1;bb.r='Refusé';CS.s=-1;bb['ev/e'+nw]={t:nw,x:'Livraison refusée par le client'}}fbp(cd.db,cd.tid,bb);CS.ok='Statut envoyé ✓';renderCourier();return 2;}}
-  else if(a==='dbtest'){var du=DB.set.db;if(!du){S.dbt='Aucune adresse enregistrée.';}else{S.dbt='Test en cours…';var dk='test'+uid()+uid()+uid();fetch(dbu(du,dk),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:Date.now()})}).then(function(r){if(!r.ok){S.dbt='Refusé (code '+r.status+'). Vérifie les règles Firebase (guide, section 13) et l’adresse.';return}return fetch(dbu(du,dk)).then(function(x){return x.json()}).then(function(j){S.dbt=(j&&j.t)?'✓ Connexion réussie : le suivi en direct est prêt.':'Réponse inattendue : vérifie l’adresse.';fetch(dbu(du,dk),{method:'DELETE'}).catch(function(){})})}).catch(function(){S.dbt='Impossible de joindre Firebase : vérifie l’adresse et ta connexion.'}).then(function(){render()})}}
+  else if(a==='cst'){var cd=decq('l');if(cd&&cd.api&&cd.dk){var cv2=t.getAttribute('data-v'),nw=Date.now(),bb={t:nw};if(cv2==='En cours'){bb.s=2;CS.s=2;bb['ev/e'+nw]={t:nw,x:'Colis récupéré, le livreur est en route'}}else if(cv2==='Livré'){return 2}else{bb.bad=1;bb.r='Refusé';CS.s=-1;bb['ev/e'+nw]={t:nw,x:'Livraison refusée par le client'}}fbp(cd.db,cd.tid,bb);CS.ok='Statut envoyé ✓';renderCourier();return 2;}}
+  else if(a==='dbtest'){var du=DB.set.db,api=trackApiUrl(DB.set.trackApi);if(!du||!api||!DB.set.trackOwnerKey){S.dbt='Renseigne la base, l’URL de la fonction et la clé propriétaire.';}else{S.dbt='Test en cours…';trackCall(api,{action:'ping',db:dbr(du),ownerKey:DB.set.trackOwnerKey}).then(function(){S.dbt='✓ Connexion à la fonction, à Firebase et clé propriétaire validée.'}).catch(function(x){S.dbt=x.message}).then(function(){render()})}}
   else if(a==='lfit'){LM.key='';LM.fitN++;rr();return 2;}
   else if(a==='lmaroc'){if(LM.map)LM.map.setView([31.8,-7.1],5);return 2;}
   else if(a==='nclose'){S.notif='';}
   else if(a==='trk'){S.trk=S.trk===id?'':id;}
   else if(a==='flat'){S.flat=!S.flat;}
-  else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.db&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
+  else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.api&&dd.dk&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
   else if(a==='pform'){S.pform=!S.pform;S.msg='';}
   else if(a==='pnew'){S.tab='cat';S.pform=true;S.pv=id;S.pview='';S.msg='';}
   else if(a==='pview'){S.pview=id;S.pi=0;S.del='';}
@@ -847,11 +867,10 @@ function boot(){
 var RS={n:0},LK='',PT=0,LT='',IP=null;
 function dcode(d){return String((d&&d.dc)||'')}
 function dcs(o){if(!o.dc){o.dc=String(100000+crypto.getRandomValues(new Uint32Array(1))[0]%900000);save()}return o.dc}
-function sec(o){try{if(DB.set.db&&o.vendor!==undefined){return fetch(dbr(DB.set.db)+'/secret/'+tid(o)+'/ck.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(dcs(o))}).catch(function(){})}}catch(e){}return Promise.resolve()}
-function sdel(dk,code,ok,ko){var n=Date.now(),b={s:3,dc:String(code),t:n};b['ev/e'+n]={t:n,x:'Colis livré'};try{fetch(dbu(dk.db,dk.tid),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}).then(function(r){if(r.ok)ok();else ko(r.status)}).catch(function(){ko(0)})}catch(e){ko(0)}}
+function sdel(dk,code,ok,ko){trackCall(dk.api,{action:'deliver',id:dk.tid,courierKey:dk.dk,code:String(code)}).then(ok).catch(function(e){ko(e.status||0)})}
 function toast(m){var x=document.createElement('div');x.className='tst';x.textContent=m;document.body.appendChild(x);setTimeout(function(){x.remove()},3200)}
 function conf(){var c=['#d4af37','#15803d','#1d4ed8','#dc2626','#f6dc85'];for(var i=0;i<26;i++){var p=document.createElement('i');p.className='cf';p.style.cssText='left:'+Math.random()*100+'vw;background:'+c[i%5]+';animation-delay:'+Math.random()*.6+'s';document.body.appendChild(p);setTimeout(function(q){q.remove()},3400,p)}}
-function snd(d,b,msg){if(d.db&&d.tid)fbp(d.db,d.tid,b);else if(d.w)window.open(wa(d.w,msg),'_blank')}
+function snd(d,b,msg){if(d.api&&d.tid)fbp(d.db,d.tid,b);else if(d.w)window.open(wa(d.w,msg),'_blank')}
 function cfire(v){var b=document.createElement('button');b.setAttribute('data-act','cst');b.setAttribute('data-v',v);b.hidden=true;document.body.appendChild(b);b.click();b.remove()}
 function cash(){try{var l=JSON.parse(localStorage.getItem('cod_cr')||'[]').filter(function(x){return x.d===today()});return{n:l.length,m:l.reduce(function(a,x){return a+x.m},0)}}catch(x){return{n:0,m:0}}}
 function btn(l,a,v,x,c){return '<button class="b sm'+(c?' '+c:'')+'" data-act="'+a+'" data-v="'+l+'"'+(x||'')+'>'+l+'</button>'}
@@ -862,7 +881,7 @@ renderClient=function(){
   var m=Object.assign({},d,CL),k=JSON.stringify([m,RS.n]);
   if(k===LK&&$('app').children.length)return;LK=k;_rc();
   var s=m.bad?-1:Math.max(0,m.s||0),h='',st=[1,2,3,4,5];
-  if(s===2)h+='<div class="card cc"><h2>Code de livraison</h2><div class="code">'+dcode(d).split('').map(function(c){return '<i>'+c+'</i>'}).join('')+'</div><p class="mut">Donne ce code au livreur seulement après avoir vérifié ton colis. Il doit le saisir pour valider la livraison.</p></div>';
+  if(s===2&&dcode(m))h+='<div class="card cc"><h2>Code de livraison</h2><div class="code">'+dcode(m).split('').map(function(c){return '<i>'+c+'</i>'}).join('')+'</div><p class="mut">Donne ce code au livreur seulement après avoir vérifié ton colis. Il doit le saisir pour valider la livraison.</p></div>';
   if(s>=0&&s<3)h+='<div class="card"><h2>Un souci ?</h2><div class="btns">'+['Reporter la livraison','Changer l’adresse','Livreur injoignable','Autre problème'].map(function(x){return btn(x,'rq',x)}).join('')+'</div></div>';
   if(s===3){
     if(m.rt)h+='<div class="card cc"><h2>Merci pour ton avis</h2><div class="stars">'+st.map(function(i){return '<button class="'+(i<=m.rt?'on':'')+'" disabled>★</button>'}).join('')+'</div></div>';
@@ -894,9 +913,9 @@ document.addEventListener('click',function(ev){
   else if(a==='cgo'&&dk){CS.ac=1;CS.rf=0;CS.cm='';renderCourier();var i=$('cdin');if(i)i.focus()}
   else if(a==='crf'&&dk){CS.rf=1;CS.ac=0;renderCourier()}
   else if(a==='cok'&&dk){var c=($('cdin').value||'').trim();
-    if(!dk.db){CS.cm='Suivi en direct (Firebase) requis pour valider le code.';renderCourier();return 2}
+    if(!dk.api||!dk.dk){CS.cm='Lien de suivi sécurisé requis pour valider le code.';renderCourier();return 2}
     sdel(dk,c,function(){deliverOk(dk)},function(st){CS.cm=st===0?'Réseau indisponible, réessaie.':''+(st===429?'Trop d’essais : mission bloquée 30 min. Contacte le vendeur pour un nouveau code.':'Code incorrect, il reste '+attLeft(dk.tid)+' essai(s). Redemande-le au client.')+'';CS.sh=1;renderCourier();setTimeout(function(){CS.sh=0},500)})}
-  else if(a==='crs'&&dk&&dk.db){CS.rf=0;var k=t.getAttribute('data-k'),b4={r:v.slice(0,40),t:n};
+  else if(a==='crs'&&dk&&dk.api&&dk.dk){CS.rf=0;var k=t.getAttribute('data-k'),b4={r:v.slice(0,40),t:n};
     if(k==='r'){cfire('Refusé');b4['ev/e'+(n+1)]={t:n+1,x:'Livraison échouée : '+v}}else{b4['ev/e'+n]={t:n,x:'Livreur : '+v+', nouvelle tentative prévue'};CS.ok='Signalé ✓'}
     fbp(dk.db,dk.tid,b4);renderCourier()}
   else if(a==='inst'&&IP){IP.prompt();t.parentNode.remove()}
@@ -962,7 +981,7 @@ function tick(){if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;var 
   DB.orders.forEach(function(o){var k=bad(o)?-1:stage(o);
     if(A.ca&&o.status==='Confirmé'&&!o.courier&&!bad(o)&&stage(o)<3&&DB.cour.length){var c=pickc(o);if(c){o.courier=c;ch=true}}
     if(o.ns==null&&(k===3||k===-1)){o.ns=stage(o);ch=true}
-    if(A.cp&&DB.set.db){if(o._ps===undefined){o._ps=k;ch=true;if(k>=1&&k<3)pub(o)}else if(o._ps!==k){o._ps=k;ch=true;if(o.tid||k>=1)pub(o)}}});
+    if(A.cp&&DB.set.db&&DB.set.trackApi&&DB.set.trackOwnerKey){if(o._ps===undefined){o._ps=k;ch=true;if(k>=1&&k<3)pub(o)}else if(o._ps!==k){o._ps=k;ch=true;if(o.tid||k>=1)pub(o)}}});
   var due=DB.orders.filter(function(o){return o.status==='En attente'&&callDue(o)}).length;
   if(A.cn&&due&&Date.now()-LN>18e5&&'Notification' in window&&Notification.permission==='granted'){LN=Date.now();nt(due+(due>1?' appels':' appel')+' à passer','Ouvre Appels pour les traiter.')}
   if(A.cb&&!K&&DB.orders.length&&Date.now()-(DB.set.lastBackup||0)>6048e5){var b=document.createElement('button');b.setAttribute('data-act','bak');b.hidden=true;document.body.appendChild(b);b.click();b.remove();ch=false}
@@ -1923,7 +1942,7 @@ function openGo(g){var p=String(g||'').split('.'),ty=p[0],id=p.slice(1).join('.'
   if(!ok)toast('Fiche introuvable sur ce téléphone.');render()}
 function deliverOk(dk){CS.ac=0;CS.dn=1;CS.s=3;try{var l=JSON.parse(localStorage.getItem('cod_cr')||'[]');l.push({d:today(),m:+dk.m||0});localStorage.setItem('cod_cr',JSON.stringify(l.slice(-200)))}catch(x){}conf();toast('Livraison validée ✓');renderCourier()}
 function onScan(tx){tx=String(tx||'').trim();var dk=decq('l'),m=tx.match(/^AMK\|([\w-]+)\|(\d{6})$/),base=location.origin+location.pathname;
-  if(m){if(!dk||dk.tid!==m[1])return toast('Ce QR de livraison ne correspond pas à cette mission.');if(CS.dn||CS.s===3)return toast('Livraison déjà validée.');if(!dk.db)return toast('Suivi en direct requis.');return sdel(dk,m[2],function(){deliverOk(dk)},function(){toast('Code invalide.')})}
+  if(m){if(!dk||dk.tid!==m[1])return toast('Ce QR de livraison ne correspond pas à cette mission.');if(CS.dn||CS.s===3)return toast('Livraison déjà validée.');if(!dk.api||!dk.dk)return toast('Lien de suivi sécurisé requis.');return sdel(dk,m[2],function(){deliverOk(dk)},function(){toast('Code invalide.')})}
   if(tx.indexOf(base)!==0)return toast('QR non reconnu : ce n’est pas un code de cette application.');
   var i=tx.indexOf('?'),q=new URLSearchParams(i<0?'':tx.slice(i+1).split('#')[0]),go=q.get('go'),l=dq(q.get('l')),tt=dq(q.get('t'));
   if(go){if(!DB)return toast('Ce code ouvre une fiche : utilise-le dans l’application du vendeur.');return openGo(go)}
@@ -1951,7 +1970,7 @@ document.addEventListener('click',function(ev){var t=ev.target.closest('[data-ac
 document.addEventListener('change',function(ev){if(ev.target.id==='tg-t')$('tg-i').innerHTML=tgopts(ev.target.value)});
 var _rd4=render;render=function(){_rd4();if(GO&&DB&&!S.locked){var g=GO;GO='';try{history.replaceState(null,'',location.pathname)}catch(x){}openGo(g)}};
 var _rl3=renderCourier;renderCourier=function(){_rl3();if(!decq('l'))return;if(!$('scc'))$('app').insertAdjacentHTML('afterbegin','<div class="card" id="scc"><h2>Scanner</h2><div class="btns"><button class="b pri" data-act="scn">Scanner le colis</button><button class="b" data-act="scn">QR du client</button></div></div>')};
-var _rc3=renderClient;renderClient=function(){_rc3();var d=decq('t');if(!d||!d.tid)return;var m=Object.assign({},d,CL);if(!m.bad&&(m.s||0)===2&&!$('cqr'))$('app').insertAdjacentHTML('beforeend','<div class="card" id="cqr" style="text-align:center"><h2>QR de livraison</h2><div style="background:#fff;padding:6px;border-radius:12px;width:min(70vw,240px);margin:0 auto">'+qrSvg('AMK|'+d.tid+'|'+dcode(d)).replace('<svg ','<svg style="display:block;width:100%;height:auto" ')+'</div><p class="mut">À montrer au livreur après avoir vérifié ton colis.</p></div>')};
+var _rc3=renderClient;renderClient=function(){_rc3();var d=decq('t');if(!d||!d.tid)return;var m=Object.assign({},d,CL);if(d.api&&!m.bad&&(m.s||0)===2&&dcode(m)&&!$('cqr'))$('app').insertAdjacentHTML('beforeend','<div class="card" id="cqr" style="text-align:center"><h2>QR de livraison</h2><div style="background:#fff;padding:6px;border-radius:12px;width:min(70vw,240px);margin:0 auto">'+qrSvg('AMK|'+d.tid+'|'+dcode(m)).replace('<svg ','<svg style="display:block;width:100%;height:auto" ')+'</div><p class="mut">À montrer au livreur après avoir vérifié ton colis.</p></div>')};
 
 boot();
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
@@ -2248,7 +2267,7 @@ var _sd0=sdel;
 function attGet(t){try{var r=JSON.parse(localStorage.getItem('cod_att_'+t)||'{"n":0,"u":0}');return r.u&&r.u<Date.now()?{n:0,u:0}:r}catch(x){return {n:0,u:0}}}
 function attLeft(t){return Math.max(0,3-attGet(t).n)}
 sdel=function(dk,code,ok,ko){var r=attGet(dk.tid);if(r.n>=3)return ko(429);
-  _sd0(dk,code,function(){try{localStorage.removeItem('cod_att_'+dk.tid)}catch(x){}ok()},function(st){if(st!==0){r.n++;r.u=Date.now()+18e5;try{localStorage.setItem('cod_att_'+dk.tid,JSON.stringify(r))}catch(x){}return ko(r.n>=3?429:st)}ko(st)})};
+  _sd0(dk,code,function(){try{localStorage.removeItem('cod_att_'+dk.tid)}catch(x){}ok()},function(st){if(st===401){r.n++;r.u=Date.now()+18e5;try{localStorage.setItem('cod_att_'+dk.tid,JSON.stringify(r))}catch(x){}return ko(r.n>=3?429:st)}if(st===429){r.n=3;r.u=Date.now()+18e5;try{localStorage.setItem('cod_att_'+dk.tid,JSON.stringify(r))}catch(x){}}ko(st)})};
 function rnd(n){return crypto.getRandomValues(new Uint8Array(n))}
 function kvPut(k,v){return idbOpen().then(function(d){return new Promise(function(res,rej){var tx=d.transaction('kv','readwrite');v===null?tx.objectStore('kv').delete(k):tx.objectStore('kv').put(v,k);tx.oncomplete=res;tx.onerror=rej})})}
 function kvGet(k){return idbOpen().then(function(d){return new Promise(function(res,rej){var q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=function(){q.result?res(q.result):rej()};q.onerror=rej})})}

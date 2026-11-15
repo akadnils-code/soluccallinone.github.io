@@ -229,9 +229,9 @@
     for (var ti = 0; ti < TBL.length; ti++) {
       var T = TBL[ti], list = DB[T.k] = DB[T.k] || [], idx = {};
       list.forEach(function (r, i) { if (r && r.id != null) idx[String(r.id)] = r; });
-      var since = st.lastPull[T.k] || null, seen = null, drop = {};
+      var since = st.lastPull[T.k] || null, seen = null, offset = 0, drop = {};
       for (;;) {
-        var rows = await api('/rest/v1/' + T.t + '?select=id,data,updated_at,deleted_at&tenant_id=eq.' + ten + (since ? '&updated_at=gte.' + encodeURIComponent(since) : '') + '&order=updated_at.asc&limit=500');
+        var rows = await api('/rest/v1/' + T.t + '?select=id,data,updated_at,deleted_at&tenant_id=eq.' + ten + (since ? '&updated_at=gte.' + encodeURIComponent(since) : '') + '&order=updated_at.asc,id.asc&limit=500&offset=' + offset);
         if (!rows || !rows.length) break;
         rows.forEach(function (row) {
           var id = String(row.id), loc = idx[id], lh = loc ? hash(canon(stripD(loc))) : null, synced = st.hashes[T.k][id];
@@ -255,7 +255,7 @@
         });
         seen = rows[rows.length - 1].updated_at;
         if (rows.length < 500) break;
-        since = seen;
+        offset += rows.length;
       }
       if (Object.keys(drop).length) DB[T.k] = DB[T.k].filter(function (r) { return !(r && drop[String(r.id)]); });
       if (seen) st.lastPull[T.k] = seen;
