@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.3.1',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.4.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -2911,6 +2911,8 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
     rows.push(['Option de livraison','Livraison à domicile']);
     rows.push(['Paiement',s===3&&!bad?'Réglé à la livraison':'À régler à la livraison']);
     if(m.m)rows.push(['Montant',m.m+' dh']);
+    if(s===3&&!bad){var lv=Object.keys(m.ev||{}).map(function(k){return m.ev[k]}).filter(function(v){return v.x==='Colis livré'||/livr/i.test(v.x)&&!/route|cours/i.test(v.x)}).sort(function(x,y){return y.t-x.t})[0];
+      if(lv){var lim=lv.t+7*864e5,ld=new Date(lim).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});rows.push(['Retour',Date.now()<=lim?'Retour gratuit possible jusqu’au '+ld:'La période de retour s’est terminée le '+ld])}}
     if(m.ad||m.cc)rows.push(['Adresse de livraison',[m.ad,m.cc].filter(Boolean).join(' - ')]);
     return '<div class="card" id="tld"><h2>Détail de la commande</h2>'+rows.map(function(r){return '<div class="row" style="padding:5px 0;align-items:flex-start"><span class="mut">'+e(r[0])+'</span><span style="text-align:right;max-width:62%">'+e(r[1])+'</span></div>'}).join('')+'</div>'}
   var _rc4=renderClient;
@@ -2929,3 +2931,55 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
 
 /* 9.3.1 : sélection automatique des champs en lecture seule (remplace onclick inline, compatible CSP) */
 document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttribute&&t.getAttribute('data-sel')&&t.select)t.select()},true);
+
+/* ===== 9.4.0 : commandes façon Jumia : historique du colis, retour, commander à nouveau, preuve d'achat ===== */
+(function(){
+  var RET=7;
+  function H(o){if(!o.hist)o.hist=[];return o.hist}
+  function log(o,x){var h=H(o),l=h[h.length-1];if(l&&l.x===x)return;h.push({t:Date.now(),x:x});if(h.length>30)h.shift()}
+  var _ss=setStatus;
+  setStatus=function(o,s){var p=o.status;_ss(o,s);if(p!==s)log(o,s==='Confirmé'?'Confirmée':s==='En attente'?'En attente de confirmation':s)};
+  var _sd=setDel;
+  setDel=function(o,d){var p=o.delivery;_sd(o,d);if(p!==o.delivery&&d)log(o,d==='Livré'?'Livrée':d==='En cours'?'En cours de livraison':d)};
+  function oid(b){var c=b.closest('.card'),s=c&&c.querySelector('select[data-id]');return s&&s.getAttribute('data-id')}
+  function ofind(id){return DB.orders.filter(function(o){return o.id===id})[0]}
+  function dt(t){try{return new Date(t).toLocaleString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
+  function dd(t){try{return new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}catch(x){return ''}}
+  function deliveredAt(o){var h=H(o).filter(function(x){return x.x==='Livrée'}).pop();return h?h.t:0}
+  function retInfo(o){
+    if(o.delivery!=='Livré')return '';
+    var t=deliveredAt(o);if(!t)return 'Livrée : date exacte inconnue pour cette commande.';
+    var lim=t+RET*864e5;return Date.now()<=lim?'Retour gratuit possible jusqu’au '+dd(lim)+' ('+RET+' jours après la livraison).':'La période de retour s’est terminée le '+dd(lim)+'.'}
+  function timeline(o){
+    var rows=[{t:o.ts||0,x:'Commande effectuée'}].concat(H(o)),bad=o.delivery==='Refusé'||o.status==='Annulé'||o.status==='Refusé';
+    var last=rows.length-1;
+    return '<div class="tl">'+rows.map(function(r,i){return '<div class="tli on'+(i===last&&!bad?' cur':'')+'"><i>✓</i><div><b>'+e(r.x)+'</b>'+(r.t?'<span>'+e(dt(r.t))+'</span>':'')+'</div></div>'}).join('')+'</div>'}
+  function modal(html){
+    var m=document.createElement('div');m.className='obm';m.innerHTML='<div class="obc"><button class="b obx" data-ob="close" aria-label="Fermer">✕</button>'+html+'</div>';
+    document.body.appendChild(m)}
+  function receipt(o){
+    var L=['PREUVE D’ACHAT','',(DB.set.company||'All In One · Amk Logistique'),'Commande n° '+o.id,'Date : '+(o.date||''),'','Client : '+(o.name||''),'Téléphone : '+(o.phone||''),'Adresse : '+[o.address,o.city].filter(Boolean).join(' - '),'','Boutique : '+o.vendor,'Produit : '+o.product,'Montant à la livraison : '+fm(o.amount||0)+' dh','Statut : '+(o.delivery==='Livré'?'Livrée':o.status)];
+    if(deliveredAt(o))L.push('Livrée le : '+dt(deliveredAt(o)));
+    return L.join('\n')}
+  function bar(o){
+    var info=retInfo(o);
+    return '<div class="ob"><button class="b" data-ob="hist">Historique du colis</button><button class="b" data-ob="again">Commander à nouveau</button>'+(o.delivery==='Livré'?'<button class="b" data-ob="proof">Preuve d’achat</button>':'')+(info?'<div class="mut obi">'+e(info)+'</div>':'')+'</div>'}
+  var _r=render;
+  render=function(){_r();
+    try{if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v')||S.tab!=='ord')return;
+      [].slice.call($('app').querySelectorAll('.card')).forEach(function(c){
+        var s=c.querySelector('select[data-id]');if(!s||c.querySelector('.ob'))return;
+        var o=ofind(s.getAttribute('data-id'));if(!o)return;
+        var d=c.querySelector('details.oc2');c.insertAdjacentHTML('beforeend',bar(o));if(d)c.appendChild(d)})}catch(x){}};
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest&&ev.target.closest('[data-ob]');if(!b)return;ev.stopPropagation();
+    var a=b.getAttribute('data-ob');
+    if(a==='close'){var m=b.closest('.obm');if(m)m.remove();return}
+    var id=oid(b),o=id&&ofind(id);if(!o)return;
+    if(a==='hist'){modal('<h2>Historique du colis</h2><div class="mut">'+e(o.product)+' · '+e(o.vendor)+'</div>'+timeline(o)+(retInfo(o)?'<p class="mut">'+e(retInfo(o))+'</p>':''))}
+    else if(a==='again'){if(!confirm('Créer une nouvelle commande identique pour '+o.name+' ?'))return;
+      var r=addOrder(o.vendor,o.name,o.phone,o.product,o.address,{city:o.city||'',channel:o.channel||'',amount:o.amount||0,upsell:0},true);
+      if(r==='ok'){save();render();toast('Nouvelle commande créée ✓')}else toast('Impossible de recréer la commande.')}
+    else if(a==='proof'){dl(new Blob([receipt(o)],{type:'text/plain;charset=utf-8'}),'preuve-achat-'+String(o.id).replace(/[^\w-]/g,'')+'.txt')}
+  },true);
+})();

@@ -10,6 +10,10 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.4.0
+- Onglet Commandes : boutons « Historique du colis » (chronologie datée), « Commander à nouveau » (copie la commande) et « Preuve d’achat » (reçu téléchargeable) ; mention du délai de retour de 7 jours après livraison, comme sur Jumia.
+- Les dates des étapes sont enregistrées à partir de cette version ; les anciennes commandes n’ont que la date de création.
+
 ## Changements v9.3.1 (sécurité)
 - Politique de sécurité du contenu (CSP) dans index.html ; adresse Firebase vérifiée (firebaseio.com / firebasedatabase.app) avant tout envoi.
 - Suivi d’une commande annulée : chronologie corrigée.

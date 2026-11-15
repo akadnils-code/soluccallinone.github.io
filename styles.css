@@ -431,3 +431,12 @@ details.oc2[open]{padding-bottom:10px}
 .tli span{display:block;font-size:12px;color:var(--mut);margin-top:2px;text-transform:capitalize}
 .tli.ko span+span{text-transform:none}
 .tli.cur i{box-shadow:0 0 0 4px rgba(255,121,0,.22)}
+
+/* ===== 9.4.0 : barre d'actions des commandes + fenêtre d'historique ===== */
+.ob{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.ob .b{flex:1 1 auto;min-width:0;border-color:#ff7900;color:#ff7900;background:transparent;font-size:13px}
+.ob .obi{flex:1 0 100%;font-size:12px}
+.obm{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center}
+.obc{position:relative;background:var(--card);color:var(--tx);width:100%;max-width:520px;max-height:85vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.obc h2{margin:0 36px 6px 0}
+.obx{position:absolute;top:10px;right:10px;width:34px;padding:4px 0}
