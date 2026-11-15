@@ -10,6 +10,9 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.5.0 (écrans simplifiés)
+- Appels, Commandes, Suivi des colis : chaque carte n'affiche plus que l'essentiel ; le reste est rangé dans « Plus d'options ». Bouton « Tout déplier / replier » en haut de l'écran.
+
 ## Changements v9.4.1 (audit)
 - Leaflet hébergé dans vendor/leaflet (plus de CDN) : la CSP n’autorise plus que les scripts du site ; carte utilisable hors ligne.
 - Politique de confidentialité : ajout du stockage cloud Supabase. À compléter avant publication : [NOM / SOCIÉTÉ] et [E-MAIL DE CONTACT].

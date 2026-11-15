@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.4.1',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.5.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -2982,4 +2982,46 @@ document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttrib
       if(r==='ok'){save();render();toast('Nouvelle commande créée ✓')}else toast('Impossible de recréer la commande.')}
     else if(a==='proof'){dl(new Blob([receipt(o)],{type:'text/plain;charset=utf-8'}),'preuve-achat-'+String(o.id).replace(/[^\w-]/g,'')+'.txt')}
   },true);
+})();
+
+/* ===== 9.5.0 : écrans simplifiés : l'essentiel d'abord, le reste dans « Plus d'options » ===== */
+(function(){
+  function kids(c){return [].slice.call(c.children)}
+  function ch(c,sel){return kids(c).filter(function(n){return n.matches&&n.matches(sel)})[0]}
+  function more(c,id,nodes,label){
+    nodes=nodes.filter(function(n){return n&&(n.nodeType!==1||n.childNodes.length)});if(!nodes.length)return;
+    var d=document.createElement('details');d.className='oc2 mo';d.setAttribute('data-om','m-'+id);if(OM['m-'+id])d.open=true;
+    var s=document.createElement('summary');s.textContent=label||'Plus d’options';d.appendChild(s);
+    var w=document.createElement('div');w.className='mw';nodes.forEach(function(n){w.appendChild(n)});d.appendChild(w);c.appendChild(d)}
+  function fold(c){
+    var k=kids(c),conf=ch(c,'.btns')&&c.querySelector('button[data-act="conf"]');
+    // Appels : nom, produit, adresse, puis Appeler / Confirmé / Annulé
+    if(conf&&k[1]&&k[1].querySelector('[data-x9="cf"]')){
+      var pri=c.querySelector('a.b.pri'),cx=c.querySelector('button[data-act="cxopen"]'),id=conf.getAttribute('data-id');
+      if(!pri||!cx)return;
+      var row=document.createElement('div');row.className='btns';row.appendChild(pri);row.appendChild(conf);row.appendChild(cx);
+      var keep=[k[0],k[2],k[3]];c.insertBefore(row,k[4]);
+      more(c,id,k.filter(function(n){return keep.indexOf(n)<0}));return}
+    // Commandes : nom + statut, produit, liste déroulante du statut
+    var st=c.querySelector('select[data-st]'),det=ch(c,'details.oc2');
+    if(st&&det&&k[1]&&k[1].querySelector('[data-x9="cf"]')){
+      var ob=ch(c,'.ob'),extra=[k[1],k[3],ob].filter(Boolean),sm=det.querySelector('summary'),pos=sm?sm.nextSibling:det.firstChild;
+      extra.forEach(function(n){det.insertBefore(n,pos)});if(sm)sm.textContent='Plus d’options';return}
+    // Suivi des colis : retire la frise (le statut est déjà affiché) et range les boutons de contact
+    var cr=c.querySelector('select[data-cr]'),d2=ch(c,'details.oc2');
+    if(cr&&d2&&c.querySelector('.stp')){
+      var stp=c.querySelector('.stp');stp.parentNode.removeChild(stp);
+      var contact=kids(c).filter(function(n){return n.classList&&n.classList.contains('btns')&&n.querySelector('a[data-act="pubo"]')&&!n.querySelector('button.pri')})[0],s2=d2.querySelector('summary');
+      if(contact)d2.insertBefore(contact,s2?s2.nextSibling:d2.firstChild);if(s2)s2.textContent='Plus d’options'}}
+  var _r5=render;
+  render=function(){_r5();
+    try{if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
+      var app=$('app');[].slice.call(app.querySelectorAll('.card')).forEach(function(c){try{fold(c)}catch(x){}});
+      if(!app.querySelector('.mo-all')&&app.querySelector('details.oc2')){
+        var b=document.createElement('button');b.className='b sm mo-all';b.type='button';b.setAttribute('data-mo','1');b.textContent='Tout déplier / replier';
+        app.insertBefore(b,app.firstChild)}
+    }catch(x){}};
+  document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-mo]');if(!b)return;ev.stopPropagation();
+    var all=[].slice.call($('app').querySelectorAll('details.oc2')),open=all.some(function(d){return !d.open});
+    all.forEach(function(d){d.open=open})},true);
 })();

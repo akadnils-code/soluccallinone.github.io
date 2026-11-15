@@ -440,3 +440,9 @@ details.oc2[open]{padding-bottom:10px}
 .obc{position:relative;background:var(--card);color:var(--tx);width:100%;max-width:520px;max-height:85vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
 .obc h2{margin:0 36px 6px 0}
 .obx{position:absolute;top:10px;right:10px;width:34px;padding:4px 0}
+
+/* ===== 9.5.0 : écrans simplifiés ===== */
+.mw>*{margin-top:8px}
+.mw>.btns:first-child,.mw>*:first-child{margin-top:4px}
+.mo-all{float:right;margin:0 0 6px;opacity:.8}
+details.mo>summary,details.oc2>summary{cursor:pointer;color:#ff7900;font-weight:600;font-size:13px}
