@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.4.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.6.1',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -450,7 +450,7 @@ var LM={el:null,map:null,g:null,spec:null,key:'',anim:0,anims:[],fail:0,bad:0,lo
 try{GEO=JSON.parse(localStorage.getItem('cod_geo')||'{}')||{}}catch(e){GEO={}}
 var LOK=function(){return !!(window.L&&window.L.map)};
 var ck=function(a,b){return a[0]+','+a[1]+'>'+b[0]+','+b[1]};
-function loadL(){if(LOK()||LM.loading||LM.fail)return;LM.loading=1;var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.appendChild(l);var c=document.createElement('script');c.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';c.onload=function(){LM.loading=0;rr()};c.onerror=function(){LM.loading=0;LM.fail=1};document.head.appendChild(c)}
+function loadL(){if(LOK()||LM.loading||LM.fail)return;LM.loading=1;var l=document.createElement('link');l.rel='stylesheet';l.href='vendor/leaflet/leaflet.css';document.head.appendChild(l);var c=document.createElement('script');c.src='vendor/leaflet/leaflet.js';c.onload=function(){LM.loading=0;rr()};c.onerror=function(){LM.loading=0;LM.fail=1};document.head.appendChild(c)}
 function geo(q){if(GEO[q]!==undefined)return GEO[q]||null;if(!GEOQ[q]){GEOQ[q]=1;try{fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ma&q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){GEO[q]=(j&&j[0])?[+j[0].lat,+j[0].lon]:0;try{localStorage.setItem('cod_geo',JSON.stringify(GEO))}catch(e){}if(GEO[q])rr()}).catch(function(){})}catch(e){}}return null}
 function roadInfo(a,b){return ROAD[ck(a,b)]||null}
 function roadGet(a,b){var k=ck(a,b);if(ROAD[k]||ROADQ[k])return;ROADQ[k]=1;try{fetch('https://router.project-osrm.org/route/v1/driving/'+a[1]+','+a[0]+';'+b[1]+','+b[0]+'?overview=simplified&geometries=geojson').then(function(r){return r.json()}).then(function(j){var t=j&&j.routes&&j.routes[0];if(t){ROAD[k]={pts:t.geometry.coordinates.map(function(c){return [c[1],c[0]]}),km:t.distance/1000,min:t.duration/60};rr()}}).catch(function(){})}catch(e){}}
@@ -2930,6 +2930,8 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
     rows.push(['Option de livraison','Livraison à domicile']);
     rows.push(['Paiement',s===3&&!bad?'Réglé à la livraison':'À régler à la livraison']);
     if(m.m)rows.push(['Montant',m.m+' dh']);
+    if(s===3&&!bad){var lv=Object.keys(m.ev||{}).map(function(k){return m.ev[k]}).filter(function(v){return v.x==='Colis livré'||/livr/i.test(v.x)&&!/route|cours/i.test(v.x)}).sort(function(x,y){return y.t-x.t})[0];
+      if(lv){var lim=lv.t+7*864e5,ld=new Date(lim).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});rows.push(['Retour',Date.now()<=lim?'Retour gratuit possible jusqu’au '+ld:'La période de retour s’est terminée le '+ld])}}
     if(m.ad||m.cc)rows.push(['Adresse de livraison',[m.ad,m.cc].filter(Boolean).join(' - ')]);
     return '<div class="card" id="tld"><h2>Détail de la commande</h2>'+rows.map(function(r){return '<div class="row" style="padding:5px 0;align-items:flex-start"><span class="mut">'+e(r[0])+'</span><span style="text-align:right;max-width:62%">'+e(r[1])+'</span></div>'}).join('')+'</div>'}
   var _rc4=renderClient;
@@ -2948,3 +2950,131 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
 
 /* 9.3.1 : sélection automatique des champs en lecture seule (remplace onclick inline, compatible CSP) */
 document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttribute&&t.getAttribute('data-sel')&&t.select)t.select()},true);
+
+/* ===== 9.4.0 : commandes façon Jumia : historique du colis, retour, commander à nouveau, preuve d'achat ===== */
+(function(){
+  var RET=7;
+  function H(o){if(!o.hist)o.hist=[];return o.hist}
+  function log(o,x){var h=H(o),l=h[h.length-1];if(l&&l.x===x)return;h.push({t:Date.now(),x:x});if(h.length>30)h.shift()}
+  var _ss=setStatus;
+  setStatus=function(o,s){var p=o.status;_ss(o,s);if(p!==s)log(o,s==='Confirmé'?'Confirmée':s==='En attente'?'En attente de confirmation':s)};
+  var _sd=setDel;
+  setDel=function(o,d){var p=o.delivery;_sd(o,d);if(p!==o.delivery&&d)log(o,d==='Livré'?'Livrée':d==='En cours'?'En cours de livraison':d)};
+  function oid(b){var c=b.closest('.card'),s=c&&c.querySelector('select[data-id]');return s&&s.getAttribute('data-id')}
+  function ofind(id){return DB.orders.filter(function(o){return o.id===id})[0]}
+  function dt(t){try{return new Date(t).toLocaleString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
+  function dd(t){try{return new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}catch(x){return ''}}
+  function deliveredAt(o){var h=H(o).filter(function(x){return x.x==='Livrée'}).pop();return h?h.t:0}
+  function retInfo(o){
+    if(o.delivery!=='Livré')return '';
+    var t=deliveredAt(o);if(!t)return 'Livrée : date exacte inconnue pour cette commande.';
+    var lim=t+RET*864e5;return Date.now()<=lim?'Retour gratuit possible jusqu’au '+dd(lim)+' ('+RET+' jours après la livraison).':'La période de retour s’est terminée le '+dd(lim)+'.'}
+  function timeline(o){
+    var rows=[{t:o.ts||0,x:'Commande effectuée'}].concat(H(o)),bad=o.delivery==='Refusé'||o.status==='Annulé'||o.status==='Refusé';
+    var last=rows.length-1;
+    return '<div class="tl">'+rows.map(function(r,i){return '<div class="tli on'+(i===last&&!bad?' cur':'')+'"><i>✓</i><div><b>'+e(r.x)+'</b>'+(r.t?'<span>'+e(dt(r.t))+'</span>':'')+'</div></div>'}).join('')+'</div>'}
+  function modal(html){
+    var m=document.createElement('div');m.className='obm';m.innerHTML='<div class="obc"><button class="b obx" data-ob="close" aria-label="Fermer">✕</button>'+html+'</div>';
+    document.body.appendChild(m)}
+  function receipt(o){
+    var L=['PREUVE D’ACHAT','',(DB.set.company||'All In One · Amk Logistique'),'Commande n° '+o.id,'Date : '+(o.date||''),'','Client : '+(o.name||''),'Téléphone : '+(o.phone||''),'Adresse : '+[o.address,o.city].filter(Boolean).join(' - '),'','Boutique : '+o.vendor,'Produit : '+o.product,'Montant à la livraison : '+fm(o.amount||0)+' dh','Statut : '+(o.delivery==='Livré'?'Livrée':o.status)];
+    if(deliveredAt(o))L.push('Livrée le : '+dt(deliveredAt(o)));
+    return L.join('\n')}
+  function bar(o){
+    var info=retInfo(o);
+    return '<div class="ob"><button class="b" data-ob="hist">Historique du colis</button><button class="b" data-ob="again">Commander à nouveau</button>'+(o.delivery==='Livré'?'<button class="b" data-ob="proof">Preuve d’achat</button>':'')+(info?'<div class="mut obi">'+e(info)+'</div>':'')+'</div>'}
+  var _r=render;
+  render=function(){_r();
+    try{if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v')||S.tab!=='ord')return;
+      [].slice.call($('app').querySelectorAll('.card')).forEach(function(c){
+        var s=c.querySelector('select[data-id]');if(!s||c.querySelector('.ob'))return;
+        var o=ofind(s.getAttribute('data-id'));if(!o)return;
+        var d=c.querySelector('details.oc2');c.insertAdjacentHTML('beforeend',bar(o));if(d)c.appendChild(d)})}catch(x){}};
+  document.addEventListener('click',function(ev){
+    var b=ev.target.closest&&ev.target.closest('[data-ob]');if(!b)return;ev.stopPropagation();
+    var a=b.getAttribute('data-ob');
+    if(a==='close'){var m=b.closest('.obm');if(m)m.remove();return}
+    var id=oid(b),o=id&&ofind(id);if(!o)return;
+    if(a==='hist'){modal('<h2>Historique du colis</h2><div class="mut">'+e(o.product)+' · '+e(o.vendor)+'</div>'+timeline(o)+(retInfo(o)?'<p class="mut">'+e(retInfo(o))+'</p>':''))}
+    else if(a==='again'){if(!confirm('Créer une nouvelle commande identique pour '+o.name+' ?'))return;
+      var r=addOrder(o.vendor,o.name,o.phone,o.product,o.address,{city:o.city||'',channel:o.channel||'',amount:o.amount||0,upsell:0},true);
+      if(r==='ok'){save();render();toast('Nouvelle commande créée ✓')}else toast('Impossible de recréer la commande.')}
+    else if(a==='proof'){dl(new Blob([receipt(o)],{type:'text/plain;charset=utf-8'}),'preuve-achat-'+String(o.id).replace(/[^\w-]/g,'')+'.txt')}
+  },true);
+})();
+
+/* ===== 9.5.0 : écrans simplifiés : l'essentiel d'abord, le reste dans « Plus d'options » ===== */
+(function(){
+  function kids(c){return [].slice.call(c.children)}
+  function ch(c,sel){return kids(c).filter(function(n){return n.matches&&n.matches(sel)})[0]}
+  function more(c,id,nodes,label){
+    nodes=nodes.filter(function(n){return n&&(n.nodeType!==1||n.childNodes.length)});if(!nodes.length)return;
+    var d=document.createElement('details');d.className='oc2 mo';d.setAttribute('data-om','m-'+id);if(OM['m-'+id])d.open=true;
+    var s=document.createElement('summary');s.textContent=label||'Plus d’options';d.appendChild(s);
+    var w=document.createElement('div');w.className='mw';nodes.forEach(function(n){w.appendChild(n)});d.appendChild(w);c.appendChild(d)}
+  function fold(c){
+    var k=kids(c),conf=ch(c,'.btns')&&c.querySelector('button[data-act="conf"]');
+    // Appels : nom, produit, adresse, puis Appeler / Confirmé / Annulé
+    if(conf&&k[1]&&k[1].querySelector('[data-x9="cf"]')){
+      var pri=c.querySelector('a.b.pri'),cx=c.querySelector('button[data-act="cxopen"]'),id=conf.getAttribute('data-id');
+      if(!pri||!cx)return;
+      var row=document.createElement('div');row.className='btns';row.appendChild(pri);row.appendChild(conf);row.appendChild(cx);
+      var keep=[k[0],k[2],k[3]];c.insertBefore(row,k[4]);
+      more(c,id,k.filter(function(n){return keep.indexOf(n)<0}));return}
+    // Commandes : nom + statut, produit, liste déroulante du statut
+    var st=c.querySelector('select[data-st]'),det=ch(c,'details.oc2');
+    if(st&&det&&k[1]&&k[1].querySelector('[data-x9="cf"]')){
+      var ob=ch(c,'.ob'),extra=[k[1],k[3],ob].filter(Boolean),sm=det.querySelector('summary'),pos=sm?sm.nextSibling:det.firstChild;
+      extra.forEach(function(n){det.insertBefore(n,pos)});if(sm)sm.textContent='Plus d’options';return}
+    // Suivi des colis : retire la frise (le statut est déjà affiché) et range les boutons de contact
+    var cr=c.querySelector('select[data-cr]'),d2=ch(c,'details.oc2');
+    if(cr&&d2&&c.querySelector('.stp')){
+      var stp=c.querySelector('.stp');stp.parentNode.removeChild(stp);
+      var contact=kids(c).filter(function(n){return n.classList&&n.classList.contains('btns')&&n.querySelector('a[data-act="pubo"]')&&!n.querySelector('button.pri')})[0],s2=d2.querySelector('summary');
+      if(contact)d2.insertBefore(contact,s2?s2.nextSibling:d2.firstChild);if(s2)s2.textContent='Plus d’options'}}
+  var _r5=render;
+  render=function(){_r5();
+    try{if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
+      var app=$('app');[].slice.call(app.querySelectorAll('.card')).forEach(function(c){try{fold(c)}catch(x){}});
+      if(!app.querySelector('.mo-all')&&app.querySelector('details.oc2')){
+        var b=document.createElement('button');b.className='b sm mo-all';b.type='button';b.setAttribute('data-mo','1');b.textContent='Tout déplier / replier';
+        app.insertBefore(b,app.firstChild)}
+    }catch(x){}};
+  document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-mo]');if(!b)return;ev.stopPropagation();
+    var all=[].slice.call($('app').querySelectorAll('details.oc2')),open=all.some(function(d){return !d.open});
+    all.forEach(function(d){d.open=open})},true);
+})();
+
+/* ===== 9.6.0 : menu Plus rangé par groupes repliables + 2 automatisations (liste noire, livraison en retard) ===== */
+(function(){
+  if(typeof AUTO0==='object'){AUTO0.bl=0;AUTO0.lt=1}
+  var NEW=[['bl','Liste noire automatique après 2 refus à la livraison du même numéro'],['lt','Alerte si un colis est en livraison depuis plus de 48 h']];
+  function togg(k,l,A){return '<label class="row" style="color:var(--tx);font-size:14px;padding:6px 0"><span>'+l+'</span><input type="checkbox" style="width:auto;min-height:0;margin:0 0 0 8px" data-act="aut" data-k="'+k+'"'+(A[k]?' checked':'')+'></label>'}
+  function lateSince(o){var h=(o.hist||[]).filter(function(x){return x.x==='En cours de livraison'}).pop();return h?h.t:0}
+  function run(){
+    if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
+    var A=aset(),ch=false;
+    if(A.bl){var n={};DB.orders.forEach(function(o){if(o.delivery==='Refusé'&&o.phone)n[o.phone]=(n[o.phone]||0)+1});
+      Object.keys(n).forEach(function(p){if(n[p]>=2&&DB.bl.indexOf(p)<0){DB.bl.push(p);ch=true;if(typeof toast==='function')toast('Numéro '+p+' ajouté à la liste noire (2 refus).')}})}
+    if(A.lt){var late=DB.orders.filter(function(o){var t=lateSince(o);return o.delivery==='En cours'&&!o.late&&t&&Date.now()-t>1728e5});
+      late.forEach(function(o){o.late=1;ch=true});
+      if(late.length&&'Notification' in window&&Notification.permission==='granted')nt(late.length+(late.length>1?' colis en retard':' colis en retard'),late.slice(0,3).map(function(o){return o.name}).join(', ')+' : en livraison depuis plus de 48 h.')}
+    if(ch)save()}
+  setInterval(run,60000);setTimeout(run,4000);
+  window.__aioRun=run;
+  var _r6=render;
+  render=function(){_r6();
+    try{if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;var app=$('app');
+      // nouvelles automatisations, sous la dernière case existante
+      var rv=app.querySelector('input[data-act="aut"][data-k="rv"]'),A=aset();
+      if(rv&&!app.querySelector('input[data-k="bl"]')){var row=rv.closest('label');row.insertAdjacentHTML('afterend',NEW.map(function(x){return togg(x[0],x[1],A)}).join(''))}
+      // menu Plus : groupes repliables, seul le premier est ouvert au départ
+      if(S.tab==='more'&&!app.querySelector('details.mg')){
+        var secs=[].slice.call(app.querySelectorAll(':scope > .sec'));
+        secs.forEach(function(s,i){var pg=s.nextElementSibling;if(!pg||!pg.classList.contains('pg'))return;
+          var key='g-'+s.textContent.trim(),d=document.createElement('details');d.className='mg';d.setAttribute('data-om',key);
+          if(OM[key]===undefined?i===0:OM[key])d.open=true;
+          var sm=document.createElement('summary');sm.textContent=s.textContent+' ('+pg.querySelectorAll('.tile').length+')';d.appendChild(sm);
+          app.insertBefore(d,s);d.appendChild(pg);s.parentNode.removeChild(s)})}
+    }catch(x){}};
+})();

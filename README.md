@@ -1,10 +1,11 @@
-# All In One — Amk Logistique (v9.4.0)
+# All In One — Amk Logistique (v9.6.1)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
 ## Fichiers à mettre à la racine du dépôt GitHub
 index.html · styles.css · app.js · cloud.js · sw.js · manifest.webmanifest · privacy.html · icon-192.png · icon-512.png · icon-512-maskable.png
 Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, README.md.
+Configuration Firebase à conserver dans le dépôt : firebase.json, database.rules.json et le dossier functions/. Ne publie jamais functions/.env.
 
 ## Déployer le suivi sécurisé Firebase
 
@@ -23,15 +24,31 @@ Le suivi en direct repose désormais sur `functions/track`. Les règles Firebase
 
 La clé propriétaire donne les droits de publication et de lecture des suivis : elle doit rester dans l’application propriétaire, protégée par le code PIN de l’appareil. Si elle est compromise, remplace le secret Firebase et la clé dans l’application, puis republie la fonction.
 
-## Changements v9.4.0 (sécurisation du suivi)
+## Changements v9.6.1 (sécurisation du suivi)
 - Les lectures, publications, statuts, positions GPS et validations de livraison passent par une Cloud Function avec des jetons distincts client/livreur.
 - Le code de livraison n’est plus dans le lien Base64 ; il est renvoyé uniquement au client autorisé. Les essais incorrects sont comptés et bloqués côté serveur après trois erreurs pendant 30 minutes.
 - Les règles Realtime Database interdisent désormais l’accès direct aux données de suivi et à l’authentification privée. Voir « Déployer le suivi sécurisé Firebase ».
 - La pagination des commandes cloud a été stabilisée pour éviter de répéter une page lorsque plusieurs lignes partagent le même horodatage.
+- Cloud Functions utilise Node.js 24 et des dépendances sans vulnérabilité npm connue au moment de la vérification.
 
 ## Mise à jour depuis Android
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
+
+## Changements v9.6.0
+- Menu Plus : 5 groupes repliables (seul le premier est ouvert).
+- Automatisations : liste noire automatique après 2 refus à la livraison (désactivée par défaut) et alerte de colis en livraison depuis plus de 48 h.
+
+## Changements v9.5.0 (écrans simplifiés)
+- Appels, Commandes, Suivi des colis : chaque carte n'affiche plus que l'essentiel ; le reste est rangé dans « Plus d'options ». Bouton « Tout déplier / replier » en haut de l'écran.
+
+## Changements v9.4.1 (audit)
+- Leaflet hébergé dans vendor/leaflet (plus de CDN) : la CSP n’autorise plus que les scripts du site ; carte utilisable hors ligne.
+- Politique de confidentialité : ajout du stockage cloud Supabase. À compléter avant publication : [NOM / SOCIÉTÉ] et [E-MAIL DE CONTACT].
+
+## Changements v9.4.0
+- Onglet Commandes : boutons « Historique du colis » (chronologie datée), « Commander à nouveau » (copie la commande) et « Preuve d’achat » (reçu téléchargeable) ; mention du délai de retour de 7 jours après livraison, comme sur Jumia.
+- Les dates des étapes sont enregistrées à partir de cette version ; les anciennes commandes n’ont que la date de création.
 
 ## Changements v9.3.1 (sécurité)
 - Politique de sécurité du contenu (CSP) dans index.html ; adresse Firebase vérifiée (firebaseio.com / firebasedatabase.app) avant tout envoi.
