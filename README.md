@@ -10,6 +10,10 @@ Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, READ
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.4.1 (audit)
+- Leaflet hébergé dans vendor/leaflet (plus de CDN) : la CSP n’autorise plus que les scripts du site ; carte utilisable hors ligne.
+- Politique de confidentialité : ajout du stockage cloud Supabase. À compléter avant publication : [NOM / SOCIÉTÉ] et [E-MAIL DE CONTACT].
+
 ## Changements v9.4.0
 - Onglet Commandes : boutons « Historique du colis » (chronologie datée), « Commander à nouveau » (copie la commande) et « Preuve d’achat » (reçu téléchargeable) ; mention du délai de retour de 7 jours après livraison, comme sur Jumia.
 - Les dates des étapes sont enregistrées à partir de cette version ; les anciennes commandes n’ont que la date de création.

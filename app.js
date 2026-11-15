@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.4.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.4.1',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -450,7 +450,7 @@ var LM={el:null,map:null,g:null,spec:null,key:'',anim:0,anims:[],fail:0,bad:0,lo
 try{GEO=JSON.parse(localStorage.getItem('cod_geo')||'{}')||{}}catch(e){GEO={}}
 var LOK=function(){return !!(window.L&&window.L.map)};
 var ck=function(a,b){return a[0]+','+a[1]+'>'+b[0]+','+b[1]};
-function loadL(){if(LOK()||LM.loading||LM.fail)return;LM.loading=1;var l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';document.head.appendChild(l);var c=document.createElement('script');c.src='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';c.onload=function(){LM.loading=0;rr()};c.onerror=function(){LM.loading=0;LM.fail=1};document.head.appendChild(c)}
+function loadL(){if(LOK()||LM.loading||LM.fail)return;LM.loading=1;var l=document.createElement('link');l.rel='stylesheet';l.href='vendor/leaflet/leaflet.css';document.head.appendChild(l);var c=document.createElement('script');c.src='vendor/leaflet/leaflet.js';c.onload=function(){LM.loading=0;rr()};c.onerror=function(){LM.loading=0;LM.fail=1};document.head.appendChild(c)}
 function geo(q){if(GEO[q]!==undefined)return GEO[q]||null;if(!GEOQ[q]){GEOQ[q]=1;try{fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ma&q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){GEO[q]=(j&&j[0])?[+j[0].lat,+j[0].lon]:0;try{localStorage.setItem('cod_geo',JSON.stringify(GEO))}catch(e){}if(GEO[q])rr()}).catch(function(){})}catch(e){}}return null}
 function roadInfo(a,b){return ROAD[ck(a,b)]||null}
 function roadGet(a,b){var k=ck(a,b);if(ROAD[k]||ROADQ[k])return;ROADQ[k]=1;try{fetch('https://router.project-osrm.org/route/v1/driving/'+a[1]+','+a[0]+';'+b[1]+','+b[0]+'?overview=simplified&geometries=geojson').then(function(r){return r.json()}).then(function(j){var t=j&&j.routes&&j.routes[0];if(t){ROAD[k]={pts:t.geometry.coordinates.map(function(c){return [c[1],c[0]]}),km:t.distance/1000,min:t.duration/60};rr()}}).catch(function(){})}catch(e){}}
