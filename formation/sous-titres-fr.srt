@@ -1,0 +1,120 @@
+1
+00:00:00,000 --> 00:00:04,200
+Bienvenue dans All In One, l'application d'Amk Logistique.
+
+2
+00:00:04,200 --> 00:00:08,400
+Elle sert à confirmer vos commandes payées à la livraison,
+
+3
+00:00:08,400 --> 00:00:12,600
+puis à suivre chaque colis jusqu'au client.
+
+4
+00:00:12,600 --> 00:00:16,800
+L'accueil résume votre journée :
+
+5
+00:00:16,800 --> 00:00:21,000
+le nombre de commandes en attente et le taux de confirmation.
+
+6
+00:00:21,000 --> 00:00:25,200
+Vous voyez aussi vos boutiques et les commandes à vérifier.
+
+7
+00:00:25,200 --> 00:00:29,400
+Dans Confirmer, chaque commande a trois boutons :
+
+8
+00:00:29,400 --> 00:00:33,600
+Appeler, Confirmé ou Annulé.
+
+9
+00:00:33,600 --> 00:00:37,800
+Après trois tentatives sans réponse, la commande est suivie automatiquement.
+
+10
+00:00:37,800 --> 00:00:42,000
+Dans Commandes, retrouvez toutes les commandes avec leur statut.
+
+11
+00:00:42,000 --> 00:00:46,200
+Filtrez par vendeur ou par statut, ou cherchez un nom.
+
+12
+00:00:46,200 --> 00:00:50,400
+Pour une commande livrée : historique du colis ou commander à nouveau.
+
+13
+00:00:50,400 --> 00:00:54,600
+Dans Livraison, des compteurs montrent :
+
+14
+00:00:54,600 --> 00:00:58,800
+à valider, validées, en cours et livrées.
+
+15
+00:00:58,800 --> 00:01:03,000
+Une carte nationale affiche les livraisons en cours.
+
+16
+00:01:03,000 --> 00:01:07,200
+Dans Vendeurs, ajoutez chaque boutique partenaire.
+
+17
+00:01:07,200 --> 00:01:11,400
+Pour chacune, vous voyez les commandes, les articles
+
+18
+00:01:11,400 --> 00:01:15,600
+et le solde de commission.
+
+19
+00:01:15,600 --> 00:01:19,800
+Dans Finances, suivez le total gagné, déjà reçu et à encaisser.
+
+20
+00:01:19,800 --> 00:01:24,000
+Le tableau par vendeur montre confirmation et livraison.
+
+21
+00:01:24,000 --> 00:01:28,200
+Le rapport hebdomadaire se partage en un clic.
+
+22
+00:01:28,200 --> 00:01:32,400
+Le menu Compte range tout en groupes repliables :
+
+23
+00:01:32,400 --> 00:01:36,600
+Pilotage, Développement commercial, Outils terrain,
+
+24
+00:01:36,600 --> 00:01:40,800
+Prospection, puis Profil et paramètres.
+
+25
+00:01:40,800 --> 00:01:45,000
+Dans Compte, Profil et paramètres, ouvrez Version et mises à jour.
+
+26
+00:01:45,000 --> 00:01:49,200
+Touchez Rechercher une mise à jour.
+
+27
+00:01:49,200 --> 00:01:53,400
+Si une nouvelle version existe, touchez Mettre à jour.
+
+28
+00:01:53,400 --> 00:01:57,600
+Vous connaissez maintenant l'essentiel d'All In One.
+
+29
+00:01:57,600 --> 00:02:01,800
+Ajoutez un vendeur, importez vos commandes, appelez vos clients.
+
+30
+00:02:01,800 --> 00:02:06,000
+Bonne vente et bonnes livraisons !
+
