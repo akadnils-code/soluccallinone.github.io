@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#111;font-family:"Segoe UI","Noto Sans","DejaVu Sans",Roboto,Arial,sans-serif}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;background:linear-gradient(120deg,#171a27 0%,#262b40 52%,#3b2b25 100%)}
+.spot{position:absolute;border-radius:50%;filter:blur(60px)}
+#wall{position:absolute;inset:0}
+.strip{position:absolute;top:0;width:6px;height:760px;background:linear-gradient(#ff7900,rgba(255,121,0,0));opacity:.55;border-radius:3px}
+#neon{position:absolute;left:70px;top:46px;font-weight:800;font-size:34px;letter-spacing:6px;color:#ffb066;text-shadow:0 0 6px #ff7900,0 0 22px #ff7900,0 0 44px #ff5a00}
+#neon small{display:block;font-size:15px;letter-spacing:5px;font-weight:600;color:#cfd3e6;text-shadow:none;margin-top:6px}
+#desk{position:absolute;left:0;top:905px;width:1920px;height:175px;background:linear-gradient(#7a4a2b 0%,#5d3720 14%,#3c2314 100%);box-shadow:0 -10px 40px rgba(0,0,0,.45)}
+#desk:before{content:"";position:absolute;left:0;right:0;top:0;height:6px;background:#a56a3e}
+#pres{position:absolute;left:20px;top:150px;width:820px;height:900px}
+#phoneArea{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#phone{position:absolute;left:905px;top:44px;width:426px;height:862px;border-radius:52px;background:linear-gradient(145deg,#26262c,#0a0a0c);padding:15px;box-shadow:0 30px 70px rgba(0,0,0,.6),0 0 0 2px #3b3b44 inset}
+#phone:before{content:"";position:absolute;left:50%;top:22px;width:92px;height:22px;margin-left:-46px;border-radius:14px;background:#050506;z-index:6}
+#screen{position:relative;width:396px;height:832px;border-radius:38px;overflow:hidden;background:#fff}
+#screen img{position:absolute;left:0;top:0;width:396px;height:826.6px;will-change:opacity,transform}
+#ring{position:absolute;border:4px solid #1e90ff;border-radius:14px;box-shadow:0 0 0 3px #fff,0 0 26px 6px rgba(30,144,255,.75);opacity:0}
+#tap{position:absolute;width:46px;height:46px;border-radius:50%;border:4px solid #1e90ff;background:rgba(255,255,255,.55);opacity:0}
+#panel{position:absolute;left:1380px;top:62px;width:500px}
+#kick{font-size:21px;font-weight:700;letter-spacing:3px;color:#ff9a3d;text-transform:uppercase;margin-bottom:12px}
+#ptitle{font-size:46px;line-height:1.12;font-weight:800;color:#fff;margin-bottom:26px;text-shadow:0 3px 14px rgba(0,0,0,.4)}
+.pt{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px;font-size:27px;line-height:1.25;color:#f1f3fb;font-weight:600;background:rgba(255,255,255,.08);border-left:6px solid #ff7900;border-radius:10px;padding:13px 16px}
+.pt i{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:#ff7900;color:#fff;font-style:normal;font-weight:800;font-size:18px;text-align:center;line-height:30px;margin-top:1px}
+#fullArea{position:absolute;left:0;top:0;width:1920px;height:1080px}
+#fkick{position:absolute;left:930px;top:110px;width:600px;line-height:1.3;overflow-wrap:anywhere;font-size:24px;font-weight:700;letter-spacing:3px;color:#ff9a3d;text-transform:uppercase}
+#ftitle{position:absolute;left:930px;top:176px;width:940px;font-size:84px;line-height:1.05;font-weight:800;color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.45)}
+#logo{position:absolute;left:1560px;top:70px;width:240px;height:240px;border-radius:52px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+#cards{position:absolute;left:930px;top:360px;width:780px}
+.card{display:flex;align-items:center;gap:22px;margin-bottom:20px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.14);border-radius:22px;padding:20px 28px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.card b{font-size:38px;color:#fff;font-weight:800;display:block}
+.card span{font-size:27px;color:#d8dcee;font-weight:500}
+.card em{flex:0 0 auto;width:62px;height:62px;border-radius:50%;background:#ff7900;color:#fff;font-style:normal;font-weight:800;font-size:32px;text-align:center;line-height:62px}
+.card.red em{background:#e5483f}.card.green em{background:#1fa463}
+#sub{position:absolute;left:0;width:1920px;top:938px;text-align:center}
+#subt{display:inline-block;max-width:1560px;background:rgba(8,9,14,.72);color:#fff;font-weight:700;font-size:40px;line-height:1.28;padding:14px 32px;border-radius:16px;text-shadow:0 2px 4px rgba(0,0,0,.6)}
+#badge{position:absolute;right:36px;bottom:22px;font-size:20px;font-weight:700;color:#e8ebf7;opacity:.8;letter-spacing:1px}
+#prog{position:absolute;left:0;top:0;height:7px;background:#ff7900;width:0}
+#sec{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+#secbg{position:absolute;left:0;top:0;width:1920px;height:1080px;background:linear-gradient(100deg,#ff7900 0%,#ff9a3d 100%);transform:translateX(-1920px)}
+#secnum{position:absolute;left:150px;top:200px;font-size:300px;font-weight:900;color:rgba(255,255,255,.28);line-height:1}
+#secname{position:absolute;left:190px;top:585px;width:1500px;font-size:100px;font-weight:800;color:#fff;line-height:1.05}
+#secbar{position:absolute;left:190px;top:545px;width:180px;height:10px;background:#fff;border-radius:5px}
+#fade{position:absolute;inset:0;background:#0b0c12;opacity:0}
+</style></head>
+<body>
+<div id="stage">
+ <div id="wall">
+  <div class="spot" style="left:-120px;top:-100px;width:700px;height:520px;background:rgba(255,140,40,.28)"></div>
+  <div class="spot" style="left:1250px;top:-160px;width:760px;height:560px;background:rgba(90,120,255,.22)"></div>
+  <div class="strip" style="left:860px"></div><div class="strip" style="left:1360px;opacity:.28"></div>
+  <div id="neon">ALL IN ONE<small>AMK LOGISTIQUE</small></div>
+  <svg style="position:absolute;left:1740px;top:560px" width="170" height="360" viewBox="0 0 170 360"><g><rect x="62" y="270" width="52" height="90" rx="8" fill="#6a3d22"/><path d="M88 270 C40 230 20 170 28 110 C60 150 78 200 88 270Z" fill="#2f9e5b"/><path d="M88 270 C130 220 150 150 132 70 C100 120 92 190 88 270Z" fill="#37b36a"/><path d="M88 270 C70 200 70 120 92 40 C112 120 104 200 88 270Z" fill="#228a4c"/></g></svg>
+ </div>
+ <div id="desk"></div>
+ <svg style="position:absolute;left:430px;top:830px" width="300" height="120" viewBox="0 0 300 120"><g>
+   <rect x="0" y="40" width="110" height="80" rx="4" fill="#c9965a"/><rect x="0" y="40" width="110" height="14" fill="#b57f45"/><rect x="48" y="40" width="14" height="80" fill="#e8d7b0" opacity=".8"/>
+   <rect x="120" y="70" width="80" height="50" rx="4" fill="#d6a468"/><rect x="154" y="70" width="12" height="50" fill="#e8d7b0" opacity=".8"/>
+   <rect x="226" y="62" width="50" height="58" rx="8" fill="#f4f4f6"/><path d="M276 76 q20 4 0 30" stroke="#f4f4f6" stroke-width="8" fill="none"/><rect x="226" y="62" width="50" height="14" fill="#ff7900"/>
+ </g></svg>
+
+ <div id="pres"></div>
+
+ <div id="phoneArea">
+  <div id="phone"><div id="screen"><img id="imgA"><img id="imgB"><div id="ring"></div><div id="tap"></div></div></div>
+  <div id="panel"><div id="kick"></div><div id="ptitle"></div><div id="pts"></div></div>
+ </div>
+ <div id="fullArea"><div id="fkick"></div><div id="ftitle"></div><img id="logo" src="icon-512.png"><div id="cards"></div></div>
+
+ <div id="sub"><div id="subt"></div></div>
+ 
+ <div id="prog"></div>
+ <div id="sec"><div id="secbg"></div><div id="secnum"></div><div id="secbar"></div><div id="secname"></div></div>
+ <div id="fade"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=clamp(x);return x*x*(3-2*x)};
+const easeOut=x=>{x=clamp(x);return 1-Math.pow(1-x,3)};
+const SF=396/412;
+let TL,SH;
+
+/* ---------- Présentateur (SVG) ---------- */
+const SKIN='#c88b5c',SKIN2='#b57849',ORG='#ff7900',ORG2='#e56a00',HAIR='#1c1815';
+$('pres').innerHTML=`
+<svg id="psvg" width="820" height="900" viewBox="-40 -70 820 900" style="overflow:visible">
+ <ellipse cx="330" cy="800" rx="330" ry="30" fill="rgba(0,0,0,.35)"/>
+ <g id="body">
+  <path d="M70 830 L70 560 Q70 478 168 452 L262 424 L398 424 L492 452 Q590 478 590 560 L590 830Z" fill="${ORG}"/>
+  <path d="M70 560 Q70 478 168 452 L180 470 Q110 492 110 570 L110 830 L70 830Z" fill="${ORG2}" opacity=".55"/>
+  <rect x="250" y="400" width="160" height="70" rx="30" fill="${SKIN2}"/>
+  <path d="M262 424 L330 520 L300 440Z" fill="#fff"/><path d="M398 424 L330 520 L360 440Z" fill="#fff"/>
+  <path d="M262 424 L330 520" stroke="#e6e6e6" stroke-width="3" fill="none"/><path d="M398 424 L330 520" stroke="#e6e6e6" stroke-width="3" fill="none"/>
+  <path d="M330 520 L330 640" stroke="${ORG2}" stroke-width="5"/><circle cx="330" cy="560" r="5" fill="#fff"/><circle cx="330" cy="600" r="5" fill="#fff"/>
+  <circle cx="470" cy="580" r="34" fill="#fff"/><text x="470" y="594" text-anchor="middle" font-size="40" font-weight="900" fill="${ORG}" font-family="Segoe UI,Noto Sans,DejaVu Sans,Arial">A</text>
+ </g>
+ <g id="armL"></g>
+ <g id="head">
+  <ellipse cx="228" cy="262" rx="20" ry="30" fill="${SKIN2}"/><ellipse cx="432" cy="262" rx="20" ry="30" fill="${SKIN2}"/>
+  <ellipse cx="330" cy="250" rx="100" ry="116" fill="${SKIN}"/>
+  <path d="M232 190 Q330 150 428 190 Q430 120 330 112 Q230 120 232 190Z" fill="${SKIN}" opacity="0"/>
+  <path d="M226 236 Q216 130 330 118 Q444 130 434 236 Q420 170 330 160 Q240 170 226 236Z" fill="${HAIR}"/>
+  <path d="M226 236 Q205 178 262 126 Q330 92 398 126 Q455 178 434 236 Q440 150 330 128 Q220 150 226 236Z" fill="${HAIR}"/>
+  <g id="face">
+   <path id="browL" d="M262 206 Q290 192 312 204" stroke="${HAIR}" stroke-width="12" stroke-linecap="round" fill="none"/>
+   <path id="browR" d="M348 204 Q370 192 398 206" stroke="${HAIR}" stroke-width="12" stroke-linecap="round" fill="none"/>
+   <ellipse cx="288" cy="236" rx="19" ry="12" fill="#fff"/><ellipse cx="372" cy="236" rx="19" ry="12" fill="#fff"/>
+   <circle id="pupL" cx="288" cy="237" r="8" fill="#3a2418"/><circle id="pupR" cx="372" cy="237" r="8" fill="#3a2418"/>
+   <circle id="shL" cx="291" cy="234" r="2.6" fill="#fff"/><circle id="shR" cx="375" cy="234" r="2.6" fill="#fff"/>
+   <ellipse id="lidL" cx="288" cy="236" rx="21" ry="13" fill="${SKIN}" style="transform-origin:288px 224px;transform:scaleY(0)"/>
+   <ellipse id="lidR" cx="372" cy="236" rx="21" ry="13" fill="${SKIN}" style="transform-origin:372px 224px;transform:scaleY(0)"/>
+   <path d="M330 244 Q316 280 322 290 Q330 296 338 290 Q344 280 330 244Z" fill="${SKIN2}" opacity=".55"/>
+   <path d="M232 280 Q236 372 330 392 Q424 372 428 280 Q410 330 378 332 Q330 322 282 332 Q250 330 232 280Z" fill="#2a2420" opacity=".92"/>
+   <path d="M296 322 Q330 306 364 322 Q330 316 296 322Z" fill="#2a2420"/>
+   <g id="mouth" transform="translate(330,352)"></g>
+  </g>
+ </g>
+ <g id="armR"></g>
+ <rect x="-40" y="718" width="820" height="200" fill="url(#dk)"/>
+ <defs><linearGradient id="dk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a4a2b"/><stop offset=".07" stop-color="#5d3720"/><stop offset="1" stop-color="#3c2314"/></linearGradient></defs>
+</svg>`;
+const SPV={};
+function arm(id,S,a1,a2,pt){
+  const r=Math.PI/180,L1=150,L2=140;
+  const E=[S[0]+L1*Math.sin(a1*r),S[1]+L1*Math.cos(a1*r)];
+  const H=[E[0]+L2*Math.sin(a2*r),E[1]+L2*Math.cos(a2*r)];
+  let f='';
+  if(pt>0.5){const d=[Math.sin(a2*r),Math.cos(a2*r)];f=`<line x1="${H[0]}" y1="${H[1]}" x2="${H[0]+d[0]*46}" y2="${H[1]+d[1]*46}" stroke="${SKIN}" stroke-width="15" stroke-linecap="round"/>`}
+  $(id).innerHTML=`<line x1="${S[0]}" y1="${S[1]}" x2="${E[0]}" y2="${E[1]}" stroke="${ORG}" stroke-width="72" stroke-linecap="round"/>
+   <line x1="${S[0]}" y1="${S[1]}" x2="${E[0]}" y2="${E[1]}" stroke="${ORG2}" stroke-opacity=".25" stroke-width="72" stroke-linecap="round" stroke-dasharray="0 400"/>
+   <line x1="${E[0]}" y1="${E[1]}" x2="${H[0]}" y2="${H[1]}" stroke="${SKIN}" stroke-width="46" stroke-linecap="round"/>
+   <circle cx="${E[0]}" cy="${E[1]}" r="38" fill="${ORG}"/>
+   <ellipse cx="${H[0]}" cy="${H[1]}" rx="30" ry="28" fill="${SKIN}"/>${f}`;
+}
+function mouth(a,cn,t){
+  // a: ouverture 0..1 ; cn: 0 = arrondi (ou/o) .. 1 = étiré (i/é)
+  const w=34+ (cn-.4)*26 - a*4, hh=a<.07?0:(5+30*a);
+  const g=$('mouth');
+  if(hh<2.5){g.innerHTML=`<path d="M${-w-6} -2 Q0 ${14} ${w+6} -2" stroke="#7a3f31" stroke-width="6" fill="none" stroke-linecap="round"/>`;return}
+  const up=hh*.28,dn=hh*.95,wr=cn<.28?w*.72:w;
+  g.innerHTML=`<path d="M${-wr} 0 Q0 ${-up*2} ${wr} 0 Q0 ${dn*2} ${-wr} 0Z" fill="#4a1519"/>
+   <path d="M${-wr*.8} ${-up*.2} Q0 ${-up*1.8} ${wr*.8} ${-up*.2} L${wr*.72} ${Math.min(hh*.32,11)} Q0 ${Math.min(hh*.32,11)-2} ${-wr*.72} ${Math.min(hh*.32,11)}Z" fill="#fbfbfb"/>
+   ${hh>16?`<ellipse cx="0" cy="${dn*1.15}" rx="${wr*.5}" ry="${hh*.2}" fill="#c4545a"/>`:''}
+   <path d="M${-wr} 0 Q0 ${-up*2} ${wr} 0" stroke="#7a3f31" stroke-width="5" fill="none" stroke-linecap="round"/>
+   <path d="M${-wr} 0 Q0 ${dn*2} ${wr} 0" stroke="#7a3f31" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+}
+
+/* ---------- Données ---------- */
+function curBeatIdx(t){let k=0;for(let i=0;i<TL.beats.length;i++){if(TL.beats[i].t0<=t)k=i;else break}return k}
+function mouthAt(t){const f=t*TL.fps,i=Math.floor(f),u=f-i,M=TL.mouth;const a=M[Math.min(i,M.length-1)],b=M[Math.min(i+1,M.length-1)];return[a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u]}
+function sentenceAt(t){for(const b of TL.beats)for(const s of b.sents){if(t>=s.t0-0.05&&t<=s.t1+0.3)return s}return null}
+function lastSentStart(t){let ls=-9;for(const b of TL.beats)for(const s of b.sents){if(s.t0<=t)ls=s.t0}return ls}
+const SH_CACHE={};
+let lastBeat=-1,shownScreen=null,prevScreen=null,screenChangeT=0;
+
+function ringState(b,t){ // retourne {x,y,w,h,vis}
+  let r=null;
+  if(!b.hl&&!b.hlrect)return null;
+  if(b.hlrect)r=b.hlrect;else if(b.screen&&SH[b.screen]&&SH[b.screen].hl){const h=SH[b.screen].hl;r=[h.x,h.y,h.width,h.height]}
+  return r;
+}
+
+function draw(t){
+  const T=TL.total;
+  $('prog').style.width=(t/T*1920)+'px';
+  const bi=curBeatIdx(t),b=TL.beats[bi],pb=TL.beats[Math.max(0,bi-1)];
+  const lt=t-b.t0;
+  // --- Modes
+  let phoneOp=b.mode==='phone'?1:0;
+  if(bi>0&&pb.mode!==b.mode){const k=ease((lt+0.2)/0.5);const pv=pb.mode==='phone'?1:0;phoneOp=pv+(phoneOp-pv)*k}
+  $('phoneArea').style.opacity=phoneOp;$('fullArea').style.opacity=1-phoneOp;
+  $('phoneArea').style.display=phoneOp<=0.001?'none':'block';$('fullArea').style.display=phoneOp>=0.999?'none':'block';
+  // --- Contenu panneau/plein écran, apparition
+  const fin=ease((lt)/0.45);
+  if(b.mode==='phone'){
+    $('kick').textContent=TL.sections.find(s=>s.sec===b.sec).name;
+    $('ptitle').textContent=b.title;
+    const n=b.pts.length,dur=b.t1-b.t0;
+    $('pts').innerHTML=b.pts.map((p,i)=>{const at=0.7+i*Math.max(0.8,(dur-1.4)/Math.max(n,1));const o=ease((lt-at)/0.35);return `<div class="pt" style="opacity:${o};transform:translateX(${(1-o)*30}px)"><i>${i+1}</i><span>${p}</span></div>`}).join('');
+    $('panel').style.opacity=fin;$('panel').style.transform=`translateY(${(1-fin)*14}px)`;
+  } else {
+    $('fkick').textContent=b.kicker;$('ftitle').textContent=b.title;
+    $('logo').style.display=(b.sec===0||b.sec===7)?'block':'none';
+    $('logo').style.opacity=fin;
+    const n=b.cards.length,ss=b.sents;
+    const classes=b.sec===1?['red','red','red','green']:[''];
+    $('cards').innerHTML=b.cards.map((c,i)=>{
+      let at=(ss[Math.min(i,ss.length-1)].t0-b.t0)+(ss.length>=n?0:0);
+      if(n>ss.length)at=0.8+i*((b.t1-b.t0-1.6)/n);
+      if(b.sec===1)at=[ss[0].t0-b.t0+1.2,ss[1].t0-b.t0+0.2,ss[1].t0-b.t0+3.2,ss[2].t0-b.t0+0.4][i];
+      if(b.sec===0)at=[ss[1].t0-b.t0+0.3,ss[1].t0-b.t0+2.0,ss[2].t0-b.t0+0.3][i];
+      if(b.sec===6)at=ss[i].t0-b.t0+0.2;
+      if(b.sec===7)at=[ss[1].t0-b.t0-0.1,ss[1].t0-b.t0+1.3,ss[1].t0-b.t0+2.4][i];
+      const o=ease((lt-at)/0.4);
+      return `<div class="card ${classes[i]||''}" style="opacity:${o};transform:translateY(${(1-o)*24}px)"><em>${(b.sec===1&&i<3)?'!':(b.sec===1?'✓':(i+1))}</em><div><b>${c[0]}</b><span>${c[1]}</span></div></div>`}).join('');
+    $('fkick').style.opacity=fin;$('ftitle').style.opacity=fin;
+  }
+  // (fondu entre images A/B calculé de façon déterministe à partir de la liste des plans)
+  renderPhone(bi,t);
+  // --- Sections
+  let sv=null;for(const s of TL.sections){if(s.sec>0&&t>=s.t0&&t<=s.t1)sv=s}
+  const secEl=$('sec');
+  if(sv){
+    const u=(t-sv.t0)/(sv.t1-sv.t0);
+    let x=-1920;
+    if(u<0.2)x=-1920*(1-easeOut(u/0.2));else if(u<0.8)x=0;else x=1920*ease((u-0.8)/0.2);
+    $('secbg').style.transform=`translateX(${x}px)`;
+    const o=clamp((u-0.16)/0.12)*clamp((0.86-u)/0.1);
+    ['secnum','secname','secbar'].forEach(i=>$(i).style.opacity=o);
+    $('secnum').textContent='0'+sv.sec;$('secname').textContent=sv.name;
+    $('secnum').style.transform=`translateX(${(1-easeOut((u-.12)/.3))*-60}px)`;
+    $('secname').style.transform=`translateX(${(1-easeOut((u-.16)/.3))*80}px)`;
+    secEl.style.display='block';
+  } else secEl.style.display='none';
+  // --- Sous-titres
+  const s=sentenceAt(t);
+  if(s){$('subt').textContent=s.text;$('sub').style.display='block'}else $('sub').style.display='none';
+  // --- Fondu d'ouverture / clôture
+  let fo=0;if(t<1.1)fo=1-ease(t/1.1);if(t>T-1.6)fo=Math.max(fo,ease((t-(T-1.6))/1.4));
+  $('fade').style.opacity=fo;
+  // --- Présentateur
+  presenter(t,b,bi);
+}
+
+let rendered={};
+function renderPhone(bi,t){
+  const b=TL.beats[bi];
+  // Détermine l'écran courant et le précédent à partir de la liste des plans (sans état)
+  let cur=b.screen||null,j=bi;
+  while(!cur&&j>0){j--;cur=TL.beats[j].screen}
+  let prev=null;let k=j-1;
+  while(k>=0){const s=TL.beats[k].screen;if(s&&s!==cur){prev=s;break}k--}
+  const A=$('imgA'),B=$('imgB');
+  const changeT=(function(){let q=j;while(q>0&&TL.beats[q-1].screen===cur)q--;return TL.beats[q].t0})();
+  const u=ease((t-changeT)/0.5);
+  if(cur){B.src!==location.origin+'/shots/'+SH[cur].file&&(B.src='shots/'+SH[cur].file);B.style.opacity=u;B.style.transform=`translateX(${(1-u)*26}px)`}
+  if(prev){A.src!==location.origin+'/shots/'+SH[prev].file&&(A.src='shots/'+SH[prev].file);A.style.opacity=1}else{A.style.opacity=0}
+  if(!prev){B.style.opacity=1;B.style.transform='none'}
+  // anneau + tap
+  const rg=$('ring'),tp=$('tap');
+  const r=(b.screen&&b.mode==='phone')?ringState(b,t):null;
+  const lt=t-b.t0;const startAt=0.9, endAt=b.t1-b.t0+0.1;
+  let on=0;
+  if(r&&b.screen===cur){on=ease((lt-startAt)/0.3)*(1-ease((lt-endAt+0.25)/0.25))}
+  if(r&&on>0.001){
+    const pad=6,x=r[0]*SF-pad,y=r[1]*SF-pad,w=r[2]*SF+pad*2,h=r[3]*SF+pad*2;
+    const pulse=1+Math.sin(t*7)*0.015;
+    rg.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;opacity:${on};transform:scale(${(0.9+0.1*on)*pulse})`;
+    const cx=x+w/2,cy=y+h/2,rp=((lt-startAt)%1.4)/1.4;
+    tp.style.cssText=`left:${cx-23}px;top:${cy-23}px;opacity:${on*(1-rp)*(r[2]>200?0:1)};transform:scale(${0.6+rp*1.2})`;
+  }else{rg.style.opacity=0;tp.style.opacity=0}
+  window.__ringVal=(r&&on>0.001)?on:0;
+}
+
+function presenter(t,b,bi){
+  const [a,cn]=mouthAt(t);
+  const sm=a;
+  const p=window.__ringVal||0;
+  // gestes
+  const osc=Math.sin(t*2.1),osc2=Math.sin(t*1.3+1);
+  const lift=a*0.9;
+  // bras gauche écran (épaule 120,500)
+  arm('armL',[120,500],-12+osc2*3,66-lift*30+osc*10,0);
+  // bras droit écran (épaule 540,500) – pointe vers le téléphone
+  const a1=lerp(10+osc2*3,36,p),a2=lerp(-66+lift*26-osc*6,98,p);
+  arm('armR',[540,500],a1,a2,p);
+  // tête
+  const ls=lastSentStart(t),sp=clamp((t-ls)/0.5);
+  const nod=Math.sin(sp*Math.PI)*(t>ls?1:0)*2.2;
+  const bob=Math.sin(t*1.6)*2+Math.sin(t*0.7)*1.5;
+  const turn=p*7;
+  $('head').setAttribute('transform',`translate(${turn*0.6} ${bob+nod}) rotate(${Math.sin(t*0.9)*1.1+turn*0.45} 330 430)`);
+  $('body').setAttribute('transform',`translate(0 ${bob*0.4})`);
+  $('face').setAttribute('transform',`translate(${turn} 0)`);
+  // sourcils
+  const raise=(sp<1?Math.sin(sp*Math.PI)*7:0)+a*3;
+  $('browL').setAttribute('d',`M262 ${206-raise} Q290 ${192-raise*1.2} 312 ${204-raise}`);
+  $('browR').setAttribute('d',`M348 ${204-raise} Q370 ${192-raise*1.2} 398 ${206-raise}`);
+  // yeux
+  const bt=t%3.7,bl=(bt>3.45&&bt<3.62)?Math.sin((bt-3.45)/0.17*Math.PI):0;
+  const bt2=(t+1.9)%5.3,bl2=(bt2>5.1)?Math.sin((bt2-5.1)/0.14*Math.PI):0;
+  const lid=Math.max(bl,bl2);
+  $('lidL').style.transform=`scaleY(${lid})`;$('lidR').style.transform=`scaleY(${lid})`;
+  const px=p*5+Math.sin(t*0.5)*1.5;
+  ['pupL','pupR','shL','shR'].forEach((id,i)=>{const base=[288,372,291,375][i];$(id).setAttribute('cx',base+px)});
+  mouth(a,cn,t);
+}
+function lerp(a,b,k){return a+(b-a)*k}
+
+/* ---------- Initialisation ---------- */
+async function init(){
+  TL=await (await fetch('timeline.json')).json();
+  SH=await (await fetch('shots.json')).json();
+  const files=[...new Set(TL.beats.map(b=>b.screen).filter(Boolean))].map(k=>'shots/'+SH[k].file);
+  await Promise.all(files.map(f=>new Promise(r=>{const i=new Image();i.onload=i.onerror=r;i.src=f})));
+  await Promise.all(['icon-512.png'].map(f=>new Promise(r=>{const i=new Image();i.onload=i.onerror=r;i.src=f})));
+  window.__ready=true;
+  draw(0);
+}
+window.draw=draw;
+init();
+</script>
+</body></html>
