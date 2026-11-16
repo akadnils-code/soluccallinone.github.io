@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.7.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.0.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -672,7 +672,7 @@ function morev(){
    ['Développement commercial',[['cat','Catalogue produits','bag','Produits des vendeurs'],['net','Réseau professionnel','net','Grossistes, acheteurs, livreurs'],['deals','Affaires & marges','chart','Intermédiation, simulateur de marge'],['sim','Prévisions de revenus','chart','Projection des commissions'],['pro','Partenariat livraison','truck','Reversements, proposition commerciale']]],
    ['Outils terrain',[['tools','Codes QR & étiquettes NFC','box','Partager, scanner, associer'],['calc','Calculatrice','calc','Calculs rapides']]],
    ['Prospection',[['wl','Carnet de prospects','wallet','Appels sortants et suivi']]],
-   ['Profil & paramètres',[['set','Mon profil','user','Photo, carte, coordonnées','p'],['set','Tarifs & messages','sliders','Commissions, messages types','a'],['set','Sécurité & données','box','Code, biométrie, sauvegarde','s'],['set','Connexions','link','Suivi en direct, import, cloud','c'],['ver','Version & mises à jour','sliders','Version installée, nouveautés, mise à jour']]]];
+   ['Profil & paramètres',[['set','Mon profil','user','Photo, carte, coordonnées','p'],['set','Tarifs & messages','sliders','Commissions, messages types','a'],['set','Sécurité & données','box','Code, biométrie, sauvegarde','s'],['set','Connexions','link','Suivi en direct, import, cloud','c'],['ver','Version & mises à jour','sliders','Version installée, nouveautés, mise à jour'],['aide','Mode d’emploi','chat','Guide pas à pas de chaque écran']]]];
   return mb()+G.map(function(g){return '<div class="sec">'+g[0]+'</div><div class="pg">'+g[1].map(function(i){return '<div class="card tile" data-act="tab" data-v="'+i[0]+'"'+(i[4]?' data-sp="'+i[4]+'"':'')+'><div class="ti">'+ico(i[2])+'</div><b>'+i[1]+'</b><div class="mut">'+i[3]+'</div></div>'}).join('')+'</div>'}).join('');
 }
 function toolv(){return mb()+'<div class="sec">QR code &amp; NFC</div>'+qacc()}
@@ -747,11 +747,11 @@ function render(){
   document.documentElement.dir=(DB&&DB.set.lang==='ar')?'rtl':'ltr';
   if(S.locked||!DB){$('nav').innerHTML='';$('hs').innerHTML='';lockv();return}
   $('ver').textContent='v'+VER;$('hs').innerHTML=hdrAv();$('hs').setAttribute('aria-label','Mon profil');$('hl').textContent=DB.set.lang==='ar'?'AR':'FR';
-  var MORE=['more','pod','wa','rap','auto','vend','fin','tools','cat','net','deals','wl','wn','calc','sim','pro','set','ver'];
+  var MORE=['more','pod','wa','rap','auto','vend','fin','tools','cat','net','deals','wl','wn','calc','sim','pro','set','ver','aide'];
   var pe=DB.orders.filter(function(o){return o.status==='En attente'&&callDue(o)}).length;
   var M=[['home','Accueil','home'],['calls','Confirmer','phone'],['ord','Commandes','box'],['del','Livraison','truck'],['more','Compte','gear']];
   $('nav').innerHTML=M.map(function(m){var on=S.tab===m[0]||(m[0]==='more'&&MORE.indexOf(S.tab)>=0);return '<button data-act="tab" data-v="'+m[0]+'" class="'+(on?'on':'')+'">'+ico(m[2])+T(m[1])+(m[0]==='calls'&&pe?'<span class="bd">'+pe+'</span>':'')+'</button>'}).join('');
-  var V={home:home,calls:calls,ord:ordv,del:delv,vend:vendv,fin:finv,set:setv,more:morev,tools:toolv,cat:catv,net:net,deals:dealsv,wl:wlist,wn:wnew,calc:calcv,sim:simv,pro:prov,ver:verv}[S.tab]||home;
+  var V={home:home,calls:calls,ord:ordv,del:delv,vend:vendv,fin:finv,set:setv,more:morev,tools:toolv,cat:catv,net:net,deals:dealsv,wl:wlist,wn:wnew,calc:calcv,sim:simv,pro:prov,ver:verv,aide:aidev}[S.tab]||home;
   var back=(MORE.indexOf(S.tab)>0)?'<button class="b full sm" data-act="tab" data-v="more" style="margin-bottom:10px">← Compte</button>':'';
   $('app').innerHTML=back+V();
   S.msg='';S.err=false;
@@ -1984,7 +1984,7 @@ function MX(due,pe,gm,s,tr,tc){
   cd=function(t,sb,body,btns){return '<div class="mxc"><h2>'+t+'</h2><div class="mut">'+sb+'</div>'+body+'<div class="btns">'+btns+'</div></div>'};
   return '<div class="mx"><div class="gr">'+(hr<5||hr>=18?'Bonsoir':'Bonjour')+' '+e(nm)+'</div><div class="gs">'+e(sub)+'</div></div>'
    +'<div class="mxw"><div class="deck" id="deck">'
-   +cd('Résumé du mois','Solde au <b style="color:#d4742a">'+dt+'</b>',bx('box','Confirmation',pct(s.ok,tr),'chart',fm(gm)+' <small>DH</small>','Gagné'),bt('Appels ('+due.length+')','calls',1)+bt('Relances','wa')+bt('Ajouter','ord',0,' data-s="add"'))
+   +cd('Résumé du mois','Solde au <b style="color:#c2570a">'+dt+'</b>',bx('box','Confirmation',pct(s.ok,tr),'chart',fm(gm)+' <small>DH</small>','Gagné'),bt('Appels ('+due.length+')','calls',1)+bt('Relances','wa')+bt('Ajouter','ord',0,' data-s="add"'))
    +cd('Livraison','Ce mois-ci',bx('truck','Taux de livraison',pct(s.liv,s.liv+s.ref),'box',(s.ref||0)+' <small>refusées</small>','Refus'),bt('Suivi','del',1)+bt('Preuves & avis','pod'))
    +cd('Finances','Ce mois-ci',bx('chart','À encaisser',fm(tc||0)+' <small>DH</small>','store',DB.vend.length,'Vendeurs'),bt('Finances','fin',1))
    +'</div><div class="dots" id="mdots"><i class="on"></i><i></i><i></i></div></div>';
@@ -3081,7 +3081,7 @@ document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttrib
 
 /* ===== 9.7.0 : menu « Version & mises à jour » ; plus de nom ni de version sur l'accueil ===== */
 var VU={msg:'',t:0,nv:''};
-var NEWS=[['9.7.0','Menu Version & mises à jour ; accueil épuré.'],['9.6.0','Menu Plus en groupes ; liste noire automatique ; alerte colis en retard.'],['9.5.0','Écrans simplifiés : l’essentiel d’abord, le reste dans « Plus d’options ».'],['9.4.0','Historique du colis, retour sous 7 jours, commander à nouveau, preuve d’achat.'],['9.3.0','Suivi client en chronologie datée avec détail de la commande.']];
+var NEWS=[['10.0.0','Nouveau design clair et premium, raccourcis sur l’accueil, mode d’emploi intégré.'],['9.7.0','Menu Version & mises à jour ; accueil épuré.'],['9.6.0','Menu Plus en groupes ; liste noire automatique ; alerte colis en retard.'],['9.5.0','Écrans simplifiés : l’essentiel d’abord, le reste dans « Plus d’options ».'],['9.4.0','Historique du colis, retour sous 7 jours, commander à nouveau, preuve d’achat.'],['9.3.0','Suivi client en chronologie datée avec détail de la commande.']];
 function verv(){
   var sa=false;try{sa=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(x){}
   var on=navigator.onLine!==false;
@@ -3111,3 +3111,21 @@ function vApply(){
 document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-vu]');if(!b)return;ev.stopPropagation();
   if(b.getAttribute('data-vu')==='chk')vCheck();else if(b.getAttribute('data-vu')==='apply')vApply()},true);
 (function(){var _r7=render;render=function(){_r7();try{var h=document.querySelector('header h1');if(h)h.style.visibility=(S.tab==='home'&&DB&&!S.locked)?'hidden':''}catch(x){}}})();
+
+/* ===== 10.0.0 : refonte clair & premium, raccourcis d'accueil, mode d'emploi intégré ===== */
+var AIDE=[
+['Démarrer en 3 minutes',['Ouvrez l’onglet « Compte » puis « Vendeurs partenaires » et touchez « Ajouter un vendeur ».','Ajoutez vos commandes : bouton « Ajouter » dans Commandes, ou importez un fichier (exemple-commandes.csv).','Allez dans « Confirmer » : appelez chaque client, puis touchez Confirmé ou Annulé.','Envoyez le lien de suivi au client : il suit son colis comme sur Jumia.']],
+['Accueil',['Il résume la journée : commandes en attente, taux de confirmation, gains en DH.','Les raccourcis ronds ouvrent directement Confirmer, Commandes, Livraison et Vendeurs.','« À vérifier » liste les commandes sans livreur ou à corriger.']],
+['Confirmer les commandes',['Appeler ouvre le téléphone. Confirmé valide, Annulé clôt la commande.','Après 3 tentatives sans réponse, le client est marqué injoignable et relancé par WhatsApp.','« Plus d’options » contient les actions rares : note, report, modification.']],
+['Commandes',['Filtrez par vendeur, statut, ou tapez un nom dans « Rechercher ».','Une commande livrée propose « Historique du colis » et « Commander à nouveau ».','Retour gratuit affiché pendant 7 jours après la livraison.']],
+['Livraison et suivi client',['Les compteurs montrent à valider, validées, en cours et livrées.','Le client reçoit un lien avec la chronologie datée de son colis.','Un code secret protège la remise ; la preuve de livraison est conservée.']],
+['Vendeurs et finances',['Chaque vendeur a sa fiche, son QR code et ses commissions.','« Finances » affiche total gagné, déjà reçu et à encaisser, par vendeur et par ville.','Solde négatif : le vendeur vous doit de l’argent. Positif : crédit déjà payé.']],
+['Automatisations',['Relances WhatsApp prêtes à envoyer pour les clients injoignables.','Liste noire automatique des clients qui refusent trop souvent.','Alerte quand un colis est en retard.','Réglage : Compte → Pilotage → Automatisations.']],
+['Données, sécurité et mises à jour',['Vos données restent chiffrées sur votre appareil. Sauvegardez-les régulièrement : Compte → Sécurité & données.','Compte → Version & mises à jour : cherchez et installez la dernière version sans rien perdre.','Hors ligne, l’appli continue de fonctionner ; tout se synchronise au retour du réseau.']]];
+function aidev(){
+  return mb()+'<div class="sec">Mode d’emploi</div><div class="card"><b>Bienvenue dans All In One</b><p class="mut" style="margin:4px 0 0">Touchez un sujet pour le déplier. Chaque étape se fait en quelques touches.</p></div>'
+   +AIDE.map(function(a,i){return '<details class="mg" data-om="aide'+i+'"'+(i===0?' open':'')+'><summary>'+(i+1)+'. '+e(a[0])+'</summary><div class="card"><ol class="aid">'+a[1].map(function(x){return '<li>'+e(x)+'</li>'}).join('')+'</ol></div></details>'}).join('')
+   +'<div class="card"><p class="mut">Une question ? Écrivez-nous : <a href="mailto:logisticsallinoneamk@gmail.com">logisticsallinoneamk@gmail.com</a></p></div>'}
+(function(){var _r10=render;render=function(){_r10();try{var a=document.getElementById('app');if(!a)return;var old=document.getElementById('qa10');if(old)old.remove();
+  if(S.tab==='home'&&DB&&!S.locked&&a.firstChild){var q=[['calls','Confirmer','phone'],['ord','Commandes','box'],['del','Livraison','truck'],['vend','Vendeurs','store'],['aide','Aide','chat']];
+   var d=document.createElement('div');d.id='qa10';d.className='qa';d.innerHTML=q.map(function(x){return '<button class="qb" data-act="goto" data-v="'+x[0]+'"><span class="qi">'+ico(x[2])+'</span><span>'+x[1]+'</span></button>'}).join('');a.insertBefore(d,a.firstChild)}}catch(x){}}})();

@@ -35,6 +35,11 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v10.0.0
+- Refonte visuelle : thème clair et épuré (blanc, orange vif, noir de contraste), en-tête blanc, navigation basse avec indicateur orange, bandeau d'accueil orange.
+- Raccourcis ronds sur l'accueil : Confirmer, Commandes, Livraison, Vendeurs, Aide.
+- **Mode d'emploi** intégré (Compte → Profil & paramètres) : 8 sujets dépliables.
+
 ## Changements v9.7.0
 - Nouveau menu **Compte → Profil & paramètres → Version & mises à jour** : version installée, recherche de mise à jour, bouton « Mettre à jour » (vide le cache sans toucher aux données), nouveautés.
 - Le nom et la version ne s'affichent plus sur la page d'accueil.
