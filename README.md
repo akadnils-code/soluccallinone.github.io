@@ -1,10 +1,10 @@
-# All In One — Amk Logistique (v9.6.1)
+# All In One — Amk Logistique (v10.2.2)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
 ## Fichiers à mettre à la racine du dépôt GitHub
 index.html · styles.css · app.js · cloud.js · sw.js · manifest.webmanifest · privacy.html · icon-192.png · icon-512.png · icon-512-maskable.png
-Hors site : import-gmail.gs (Google Apps Script), GUIDE-MISE-EN-SERVICE.md, README.md.
+Dossiers et fichiers du dépôt hors site : `functions/` (Cloud Function de suivi), `formation/` (guide illustré, vidéo, sous-titres, captures), `supabase-*.sql`, `database.rules.json`, `firebase.json`, `exemple-commandes.csv`, `RAPPORT-MODIFICATIONS.md`. Le script Google Apps Script d'import Gmail et le guide de mise en service ne sont pas dans ce dépôt.
 Configuration Firebase à conserver dans le dépôt : firebase.json, database.rules.json et le dossier functions/. Ne publie jamais functions/.env.
 
 ## Déployer le suivi sécurisé Firebase
@@ -33,7 +33,22 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 
 ## Mise à jour depuis Android
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
-2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
+2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version est affiché dans Paramètres → Aide et à propos → Version & mises à jour.
+
+## Navigation (depuis la v10.2)
+Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
+- **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
+- **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Changements v10.2.2
+- Textes d'aide, messages d'erreur et mode d'emploi alignés sur le nouveau menu Paramètres (plus de renvoi vers « Compte → Sécurité », « Compte → Mon profil », « Compte → Connexions »).
+- Cache du service worker `cod-v71`.
+- Vérifié en navigateur sans erreur JavaScript : 6 onglets, 8 rubriques de Paramètres, 11 tuiles du Compte, ajout d'un vendeur et d'une commande, passage dans Appels, chargement des données de démonstration.
+
+## Changements v10.2.1 et v10.1.0
+- Paramètres séparés de Compte (6e onglet), menu principal minimaliste puis un écran par rubrique.
+- Compte réduit à deux onglets : Gestion et Opérations.
+- Le Mode d'emploi et Version & mises à jour s'ouvrent depuis Paramètres → Aide et à propos.
 
 ## Changements v10.0.1
 - Cartes Commandes, Livraison et Finances plus visuelles (bordure de couleur par statut, compteurs colorés).
@@ -42,7 +57,7 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 ## Changements v10.0.0
 - Refonte visuelle : thème clair et épuré (blanc, orange vif, noir de contraste), en-tête blanc, navigation basse avec indicateur orange, bandeau d'accueil orange.
 - Raccourcis ronds sur l'accueil : Confirmer, Commandes, Livraison, Vendeurs, Aide.
-- **Mode d'emploi** intégré (Compte → Profil & paramètres) : 8 sujets dépliables.
+- **Mode d'emploi** intégré (aujourd'hui : Paramètres → Aide et à propos) : 8 sujets dépliables.
 
 ## Changements v9.7.0
 - Nouveau menu **Compte → Profil & paramètres → Version & mises à jour** : version installée, recherche de mise à jour, bouton « Mettre à jour » (vide le cache sans toucher aux données), nouveautés.
@@ -57,7 +72,7 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 
 ## Changements v9.4.1 (audit)
 - Leaflet hébergé dans vendor/leaflet (plus de CDN) : la CSP n’autorise plus que les scripts du site ; carte utilisable hors ligne.
-- Politique de confidentialité : ajout du stockage cloud Supabase. À compléter avant publication : [NOM / SOCIÉTÉ] et [E-MAIL DE CONTACT].
+- Politique de confidentialité : ajout du stockage cloud Supabase (nom et e-mail de contact renseignés depuis).
 
 ## Changements v9.4.0
 - Onglet Commandes : boutons « Historique du colis » (chronologie datée), « Commander à nouveau » (copie la commande) et « Preuve d’achat » (reçu téléchargeable) ; mention du délai de retour de 7 jours après livraison, comme sur Jumia.
@@ -113,7 +128,7 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 - Dernier envoi gagne, par enregistrement ; une modification locale non envoyée n’est jamais écrasée. Les images restent locales (étape 2c).
 
 ## Fonctions
-Appels et WhatsApp « en un mot » avec mémo de rappel · commandes · suivi de livraison (carte, simulation, preuve photo GPS) · avis 1 à 5 · finances et rapport hebdomadaire · import automatique · verrouillage par code, empreinte ou visage · arabe / anglais (partiel).
+Mode d'emploi intégré · formation en vidéo (`formation/`) · Appels et WhatsApp « en un mot » avec mémo de rappel · commandes · suivi de livraison (carte, simulation, preuve photo GPS) · avis 1 à 5 · finances et rapport hebdomadaire · import automatique · verrouillage par code, empreinte ou visage · arabe / anglais (partiel).
 
 ## Sécurité
 - Code de livraison limité à 3 essais par mission (blocage serveur de 30 min après déploiement de la fonction).
