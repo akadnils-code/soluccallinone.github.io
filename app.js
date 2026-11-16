@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.0.1',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.1.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -147,8 +147,8 @@ function home(){
   if(due.length)al+='<div class="alert">'+due.length+' commande(s) à appeler maintenant.</div>';
   if(toCollect>0)al+='<div class="alert">'+fm(toCollect)+' dh à encaisser auprès des vendeurs (voir Finances).</div>';
   if(low.length)al+='<div class="alert">Crédit faible : '+e(low.join(', '))+'.</div>';
-  if(o.length&&Date.now()-(DB.set.lastBackup||0)>7*864e5)al+='<div class="alert">Pas de sauvegarde depuis plus de 7 jours. Compte → Paramètres → Sécurité & données.</div>';
-  if(!K&&CRY&&o.length>5)al+='<div class="alert">Tes données ne sont pas chiffrées. Active un code dans Compte → Paramètres → Sécurité & données.</div>';
+  if(o.length&&Date.now()-(DB.set.lastBackup||0)>7*864e5)al+='<div class="alert">Pas de sauvegarde depuis plus de 7 jours. Compte → Paramètres → Sauvegarde et données.</div>';
+  if(!K&&CRY&&o.length>5)al+='<div class="alert">Tes données ne sont pas chiffrées. Active un code dans Compte → Paramètres → Sécurité et confidentialité.</div>';
   return mb()+cbar()+al+'<div class="grid">'+kp('À appeler maintenant',due.length)+kp('Programmés',pe.length-due.length)+kp('Confirmation (mois)',pct(s.ok,tr))+kp('Livraison (mois)',pct(s.liv,s.liv+s.ref),'g')+kp('Gagné ce mois',fm(gm)+' dh','g')+kp('À encaisser',fm(toCollect)+' dh',toCollect>0?'r':'')+'</div>'
    +'<div class="btns"><button class="b pri" data-act="goto" data-v="calls">'+ico('phone','s')+' Appeler</button><button class="b" data-act="goto" data-v="ord" data-s="add">'+ico('box','s')+' Ajouter</button></div>'
    +(DB.orders.length?'':'<div class="card" style="margin-top:12px"><h2>Pour commencer</h2><p class="mut">1) Crée un vendeur dans Vendeurs. 2) Ajoute ses commandes dans Commandes → Ajouter (une, collées de WhatsApp ou par liste). 3) Appelle dans l’onglet Appels. Chaque vendeur a 30 commandes d’essai gratuites.</p></div>');
@@ -672,7 +672,7 @@ function morev(){
    ['Développement commercial',[['cat','Catalogue produits','bag','Produits des vendeurs'],['net','Réseau professionnel','net','Grossistes, acheteurs, livreurs'],['deals','Affaires & marges','chart','Intermédiation, simulateur de marge'],['sim','Prévisions de revenus','chart','Projection des commissions'],['pro','Partenariat livraison','truck','Reversements, proposition commerciale']]],
    ['Outils terrain',[['tools','Codes QR & étiquettes NFC','box','Partager, scanner, associer'],['calc','Calculatrice','calc','Calculs rapides']]],
    ['Prospection',[['wl','Carnet de prospects','wallet','Appels sortants et suivi']]],
-   ['Profil & paramètres',[['set','Mon profil','user','Photo, carte, coordonnées','p'],['set','Tarifs & messages','sliders','Commissions, messages types','a'],['set','Sécurité & données','box','Code, biométrie, sauvegarde','s'],['set','Connexions','link','Suivi en direct, import, cloud','c'],['ver','Version & mises à jour','sliders','Version installée, nouveautés, mise à jour'],['aide','Mode d’emploi','chat','Guide pas à pas de chaque écran']]]];
+   ['Profil & paramètres',[['set','Paramètres','gear','Profil, sécurité, données, connexions, langue, aide']]]];
   return mb()+G.map(function(g){return '<div class="sec">'+g[0]+'</div><div class="pg">'+g[1].map(function(i){return '<div class="card tile" data-act="tab" data-v="'+i[0]+'"'+(i[4]?' data-sp="'+i[4]+'"':'')+'><div class="ti">'+ico(i[2])+'</div><b>'+i[1]+'</b><div class="mut">'+i[3]+'</div></div>'}).join('')+'</div>'}).join('');
 }
 function toolv(){return mb()+'<div class="sec">QR code &amp; NFC</div>'+qacc()}
@@ -797,7 +797,7 @@ document.addEventListener('click',function(ev){
   else if(a==='vback'){S.vsel='';S.lk=null}
   else if(a==='vver'){var vv=vid(id);if(vv)vv.ver=!vv.ver}
   else if(a==='vdel'){if(S.del===id){var vd=vid(id);if(vd&&DB.orders.some(function(x){return x.vendor===vd.name}))mk('Ce vendeur a des commandes : supprime-les d’abord ou garde la fiche.',1);else{DB.vend=DB.vend.filter(function(x){return x.id!==id});DB.pay=DB.pay.filter(function(p){return p.vid!==id});S.vsel=''}S.del=''}else S.del=id}
-  else if(a==='vlink'){var vl=vid(id);if(!DB.set.phone)mk('Renseigne ton numéro dans Compte → Mon profil avant de créer un lien.',1);else if(vl){S.lk={id:vl.id,url:location.origin+location.pathname+'?v='+encodeURIComponent(vl.name)+'&w='+encodeURIComponent(waNum(DB.set.phone))+(vl.arts&&vl.arts.length?'&c='+encq(vl.arts.slice(0,12).map(function(x){return{n:String(x.name).slice(0,40),p:x.price,o:x.old||0}})):'')}}}
+  else if(a==='vlink'){var vl=vid(id);if(!DB.set.phone)mk('Renseigne ton numéro dans Compte → Paramètres → Compte et profil avant de créer un lien.',1);else if(vl){S.lk={id:vl.id,url:location.origin+location.pathname+'?v='+encodeURIComponent(vl.name)+'&w='+encodeURIComponent(waNum(DB.set.phone))+(vl.arts&&vl.arts.length?'&c='+encq(vl.arts.slice(0,12).map(function(x){return{n:String(x.name).slice(0,40),p:x.price,o:x.old||0}})):'')}}}
   else if(a==='lcopy'){var lk=g('lk');lk.select();try{navigator.clipboard.writeText(lk.value)}catch(x){try{document.execCommand('copy')}catch(y){}}t.textContent='Copié ✓';return}
   else if(a==='padd'){var am=parseFloat(g('p-a').value);if(!am){mk('Indique un montant.',1)}else{DB.pay.push({id:uid(),vid:id,amount:am,date:today(),note:g('p-n').value.trim()});mk('Paiement enregistré.')}}
   else if(a==='pdel'){if(S.del===id){DB.pay=DB.pay.filter(function(p){return p.id!==id});S.del=''}else S.del=id}
@@ -2271,7 +2271,7 @@ sdel=function(dk,code,ok,ko){var r=attGet(dk.tid);if(r.n>=3)return ko(429);
 function rnd(n){return crypto.getRandomValues(new Uint8Array(n))}
 function kvPut(k,v){return idbOpen().then(function(d){return new Promise(function(res,rej){var tx=d.transaction('kv','readwrite');v===null?tx.objectStore('kv').delete(k):tx.objectStore('kv').put(v,k);tx.oncomplete=res;tx.onerror=rej})})}
 function kvGet(k){return idbOpen().then(function(d){return new Promise(function(res,rej){var q=d.transaction('kv').objectStore('kv').get(k);q.onsuccess=function(){q.result?res(q.result):rej()};q.onerror=rej})})}
-function bioEnable(){if(!K)return toast('Crée d’abord un code PIN (Compte → Admin → Sécurité).');if(!window.PublicKeyCredential||!navigator.credentials)return toast('Appareil non compatible.');
+function bioEnable(){if(!K)return toast('Crée d’abord un code PIN (Compte → Paramètres → Sécurité et confidentialité).');if(!window.PublicKeyCredential||!navigator.credentials)return toast('Appareil non compatible.');
   navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:'All In One · Amk Logistique'},user:{id:rnd(16),name:'amk',displayName:'Amk Logistique'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}})
    .then(function(c){return kvPut('bioK',K).then(function(){localStorage.setItem('cod_bio',b64(new Uint8Array(c.rawId)));toast('Empreinte / visage activés ✅');render()})}).catch(function(){toast('Activation annulée ou impossible.')})}
 function bioOff(){try{localStorage.removeItem('cod_bio')}catch(x){}kvPut('bioK',null).catch(function(){});toast('Empreinte / visage désactivés.');render()}
@@ -3129,3 +3129,83 @@ function aidev(){
 (function(){var _r10=render;render=function(){_r10();try{var a=document.getElementById('app');if(!a)return;var old=document.getElementById('qa10');if(old)old.remove();
   if(S.tab==='home'&&DB&&!S.locked&&a.firstChild){var q=[['calls','Confirmer','phone'],['ord','Commandes','box'],['del','Livraison','truck'],['vend','Vendeurs','store'],['aide','Aide','chat']];
    var d=document.createElement('div');d.id='qa10';d.className='qa';d.innerHTML=q.map(function(x){return '<button class="qb" data-act="goto" data-v="'+x[0]+'"><span class="qi">'+ico(x[2])+'</span><span>'+x[1]+'</span></button>'}).join('');a.insertBefore(d,a.firstChild)}}catch(x){}}})();
+
+/* ===== 10.1.0 : Paramètres réorganisés — menu principal minimaliste + un écran indépendant par rubrique, sans doublons ===== */
+var SETC=[
+ ['p','Compte et profil','Photo, nom, coordonnées, carte de visite','user'],
+ ['a','Tarifs et messages','Commissions, remises, messages types','sliders'],
+ ['sec','Sécurité et confidentialité','Code, empreinte ou visage, confidentialité','box'],
+ ['dat','Sauvegarde et données','Sauvegarde, restauration, démonstration','dl'],
+ ['int','Connexions','Suivi en direct, import des commandes, compte cloud','link'],
+ ['map','Carte','Fond de carte personnalisé','pin'],
+ ['lng','Langue','Français ou arabe','globe'],
+ ['help','Aide et à propos','Mode d’emploi, version et mises à jour','chat']
+];
+var SETLEG={p:'p',a:'a',s:'sec',c:'int'};
+function setCss(){if(document.getElementById('setcss'))return;var st=document.createElement('style');st.id='setcss';
+ st.textContent='.srg{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}.sr{display:flex;align-items:center;gap:12px;margin:0;padding:14px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;transition:transform .12s}'
+ +'.sr:active{transform:scale(.99)}.sr:focus-visible{outline:2px solid var(--pc,#ff7a00);outline-offset:2px}'
+ +'.sri{flex:0 0 auto;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,122,0,.12);color:var(--pc,#ff7a00)}'
+ +'@supports(background:color-mix(in srgb,red 10%,transparent)){.sri{background:color-mix(in srgb,var(--pc,#ff7a00) 14%,transparent)}}'
+ +'.sri svg{width:22px;height:22px}.srt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.srt b{font-size:15px}.srt .mut{font-size:12.5px;line-height:1.3}'
+ +'.src{flex:0 0 auto;width:20px;height:20px;opacity:.45}[dir=rtl] .src{transform:scaleX(-1)}.sbk{margin-bottom:10px}'
+ +'@media(min-width:760px){.srg{grid-template-columns:1fr 1fr}}';
+ document.head.appendChild(st)}
+function setRow(attr,t,d,i){return '<div class="card sr" role="button" tabindex="0" '+attr+'><span class="sri">'+ico(i)+'</span><span class="srt"><b>'+e(t)+'</b><span class="mut">'+e(d)+'</span></span>'
+ +'<svg class="src" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'}
+function setScr(k){
+  var s=DB.set;
+  var f=function(k,l,t,x){return '<label>'+l+'</label><input '+(t==='n'?'type="number" min="0" step="0.5" inputmode="decimal"':'')+' data-set="'+k+'" value="'+e(s[k])+'" '+(x||'')+'>'};
+  var ex=function(){return s.cf+s.bn};
+  if(k==='p')return profv();
+  if(k==='a')return ''
++'<div class="card"><h2>Tarifs & commissions</h2>'+f('cf','Par commande confirmée (dh)','n')+f('bn','Bonus par commande livrée (dh)','n')+f('up','Commission sur vente additionnelle (%)','n')+f('trial','Commandes d’essai gratuites par vendeur','n')+f('dth','Remise de volume à partir de (confirmations / mois)','n')+f('dpc','Remise de volume (%)','n')+f('minc','Crédit minimum conseillé (dh)','n')+f('rc','Coût d’un colis refusé (dh) : livraison aller + retour','n')
++'<p class="mut">Une commande livrée rapporte '+ex()+' dh ('+s.cf+' + '+s.bn+'). Tu es payé pour ton travail même si le colis est refusé. Le tarif est figé à la confirmation : changer ces valeurs n’affecte jamais les commandes passées.</p></div>'
++'<div class="card"><h2>Messages types</h2><label>Relance WhatsApp</label><textarea data-set="tpl">'+e(s.tpl)+'</textarea><p class="mut">[boutique] et [produit] sont remplacés.</p><label>Script d’appel</label><textarea data-set="script">'+e(s.script)+'</textarea></div>';
+  if(k==='sec')return ''
++'<div class="card"><h2>Verrouillage par code</h2>'+(CRY?'<p class="mut">'+(K?'Données chiffrées sur cet appareil (AES-256). Verrouillage automatique après 5 minutes en arrière-plan.':'Un code chiffre tes données (AES-256) et verrouille l’application. Si tu l’oublies, les données sont perdues : télécharge une sauvegarde avant.')+'</p><input type="password" id="npin" autocomplete="new-password" placeholder="Nouveau code (8 caractères minimum)"><button class="b pri full" data-act="setpin">'+(K?'Changer le code':'Activer le code')+'</button>'+(K?'<button class="b full" style="margin-top:6px" data-act="lock">Verrouiller maintenant</button><button class="b full" style="margin-top:6px" data-act="nopin">Retirer le code</button>':''):'<p class="mut">Le chiffrement n’est pas disponible dans ce contexte (HTTPS requis).</p>')+'</div>'
+   +bioCard()
+   +'<div class="card"><h2>Confidentialité</h2><p class="mut"><a href="privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a></p></div>';
+  if(k==='dat')return ''
++'<div class="card"><h2>Sauvegarde & restauration</h2><p class="mut">Tout reste sur cet appareil. Télécharge une sauvegarde chaque semaine. L’export Excel se trouve dans Finances & soldes.</p><div class="btns"><button class="b pri" data-act="bak">'+ico('dl','s')+' Télécharger la sauvegarde</button><button class="b" data-act="csvx">Copier en CSV</button></div>'+(S.csvx?'<textarea id="csvxt" readonly>'+e(S.csvx)+'</textarea>':'')+'<label style="display:block;margin-top:10px">Restaurer une sauvegarde (.json)</label><input type="file" id="rs" accept=".json,application/json"><button class="b ko full" style="margin-top:8px" data-act="wipe">'+(S.del==='wipe'?'Confirmer : tout effacer ?':'Effacer toutes les données')+'</button></div>'
++'<div class="card"><h2>Données de démonstration</h2><p class="mut">Remplit l’appli de fausses commandes pour tester ou filmer une démo. Seules les données marquées « démo » sont supprimées par le bouton de retrait.</p><div class="btns"><button class="b pri" data-act="demoon">Charger la démo</button><button class="b ko" data-act="demooff">Retirer la démo</button></div></div>';
+  if(k==='int')return setLive()+impCard()+(window.cloudCard?cloudCard():'');
+  if(k==='map')return setMap();
+  if(k==='lng'){var ar=s.lang==='ar';return '<div class="card"><h2>Langue de l’application</h2><p class="mut">Langue actuelle : <b>'+(ar?'العربية':'Français')+'</b>. La traduction arabe est partielle.</p><button class="b pri full" data-act="lang">'+(ar?'Passer en français':'Passer en arabe')+'</button></div>'}
+  if(k==='help')return '<div class="srg">'+setRow('data-sc="go:aide"','Mode d’emploi','Guide pas à pas de chaque écran','chat')+setRow('data-sc="go:ver"','Version & mises à jour','Version installée v'+VER+', nouveautés, mise à jour','sliders')+'</div>';
+  return '';
+}
+setv=function(){
+  if(!DB)return '';
+  setCss();
+  var sp=S.sp;if(SETLEG[sp])sp=S.sp=SETLEG[sp];
+  var cat=null;SETC.forEach(function(c){if(c[0]===sp)cat=c});
+  if(!cat){S.sp='';return mb()+'<div class="sec">Paramètres</div><div class="srg">'+SETC.map(function(c){return setRow('data-sc="o:'+c[0]+'"',c[1],c[2],c[3])}).join('')+'</div>'}
+  return mb()+'<button type="button" class="b full sm sbk" data-sc="hub">← Paramètres</button><div class="sec">'+e(cat[1])+'</div>'+setScr(cat[0])+(cat[0]==='dat'&&DB.legacy?'<div class="card"><p class="mut">Données v3 non affichées conservées dans la sauvegarde.</p></div>':'');
+};
+document.addEventListener('click',function(ev){
+  var tb=ev.target.closest&&ev.target.closest('[data-act="tab"]');
+  if(tb&&tb.id!=='hs'){S.setBack=0;if(tb.getAttribute('data-v')==='set'&&!tb.hasAttribute('data-sp'))S.sp=''}
+  var b=ev.target.closest&&ev.target.closest('[data-sc]');if(!b||!DB)return;
+  var v=b.getAttribute('data-sc'),p=v.split(':');
+  ev.preventDefault();ev.stopPropagation();
+  if(v==='hub'){S.tab='set';S.sp='';S.setBack=0}
+  else if(p[0]==='o'){S.tab='set';S.sp=p[1]}
+  else if(p[0]==='go'){S.tab=p[1];S.setBack=1;S.pview='';S.pform=false;S.del='';S.vsel='';S.inv='';S.vform=false;S.edit='';S.cx=''}
+  else return;
+  try{render()}catch(x){try{show(x.message)}catch(y){}}
+  window.scrollTo({top:0});
+},true);
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='Enter'&&ev.key!==' ')return;
+  var b=ev.target;if(!b||!b.classList||!b.classList.contains('sr')||!b.hasAttribute('data-sc'))return;
+  ev.preventDefault();b.click();
+});
+(function(){var _r11=render;render=function(){_r11();try{
+  if(!DB||S.locked)return;
+  var A=document.getElementById('app');if(!A)return;
+  var bk=A.firstElementChild;
+  if(!bk||bk.tagName!=='BUTTON'||bk.getAttribute('data-act')!=='tab'||bk.getAttribute('data-v')!=='more')return;
+  if(S.tab==='set'&&S.sp){bk.remove()}
+  else if(S.setBack&&(S.tab==='ver'||S.tab==='aide')){bk.removeAttribute('data-act');bk.removeAttribute('data-v');bk.setAttribute('data-sc','hub');bk.textContent='← Paramètres'}
+}catch(x){}}})();
