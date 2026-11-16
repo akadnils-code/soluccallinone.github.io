@@ -35,6 +35,10 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v9.7.0
+- Nouveau menu **Compte → Profil & paramètres → Version & mises à jour** : version installée, recherche de mise à jour, bouton « Mettre à jour » (vide le cache sans toucher aux données), nouveautés.
+- Le nom et la version ne s'affichent plus sur la page d'accueil.
+
 ## Changements v9.6.0
 - Menu Plus : 5 groupes repliables (seul le premier est ouvert).
 - Automatisations : liste noire automatique après 2 refus à la livraison (désactivée par défaut) et alerte de colis en livraison depuis plus de 48 h.

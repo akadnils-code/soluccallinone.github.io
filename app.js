@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.6.1',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='9.7.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -296,7 +296,7 @@ function setv(){
   var f=function(k,l,t,x){return '<label>'+l+'</label><input '+(t==='n'?'type="number" min="0" step="0.5" inputmode="decimal"':'')+' data-set="'+k+'" value="'+e(s[k])+'" '+(x||'')+'>'};
   var ex=function(){return s.cf+s.bn};
   var seg='<div class="seg s4">'+[['p','Profil'],['a','Activité'],['s','Sécurité'],['c','Connexions']].map(function(x){return '<button data-act="sp" data-v="'+x[0]+'" class="'+(sp===x[0]?'on':'')+'">'+x[1]+'</button>'}).join('')+'</div>';
-  var foot='<div class="card"><p class="mut">Version '+VER+' · <a href="privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>'+(DB.legacy?' · données v3 non affichées conservées dans la sauvegarde':'')+'</p></div>';
+  var foot='<div class="card"><p class="mut"><a href="privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a>'+(DB.legacy?' · données v3 non affichées conservées dans la sauvegarde':'')+'</p></div>';
   if(sp==='p')return mb()+seg+profv();
   if(sp==='a')return mb()+seg
    +'<div class="card"><h2>Tarifs & commissions</h2>'+f('cf','Par commande confirmée (dh)','n')+f('bn','Bonus par commande livrée (dh)','n')+f('up','Commission sur vente additionnelle (%)','n')+f('trial','Commandes d’essai gratuites par vendeur','n')+f('dth','Remise de volume à partir de (confirmations / mois)','n')+f('dpc','Remise de volume (%)','n')+f('minc','Crédit minimum conseillé (dh)','n')+f('rc','Coût d’un colis refusé (dh) : livraison aller + retour','n')
@@ -672,7 +672,7 @@ function morev(){
    ['Développement commercial',[['cat','Catalogue produits','bag','Produits des vendeurs'],['net','Réseau professionnel','net','Grossistes, acheteurs, livreurs'],['deals','Affaires & marges','chart','Intermédiation, simulateur de marge'],['sim','Prévisions de revenus','chart','Projection des commissions'],['pro','Partenariat livraison','truck','Reversements, proposition commerciale']]],
    ['Outils terrain',[['tools','Codes QR & étiquettes NFC','box','Partager, scanner, associer'],['calc','Calculatrice','calc','Calculs rapides']]],
    ['Prospection',[['wl','Carnet de prospects','wallet','Appels sortants et suivi']]],
-   ['Profil & paramètres',[['set','Mon profil','user','Photo, carte, coordonnées','p'],['set','Tarifs & messages','sliders','Commissions, messages types','a'],['set','Sécurité & données','box','Code, biométrie, sauvegarde','s'],['set','Connexions','link','Suivi en direct, import, cloud','c']]]];
+   ['Profil & paramètres',[['set','Mon profil','user','Photo, carte, coordonnées','p'],['set','Tarifs & messages','sliders','Commissions, messages types','a'],['set','Sécurité & données','box','Code, biométrie, sauvegarde','s'],['set','Connexions','link','Suivi en direct, import, cloud','c'],['ver','Version & mises à jour','sliders','Version installée, nouveautés, mise à jour']]]];
   return mb()+G.map(function(g){return '<div class="sec">'+g[0]+'</div><div class="pg">'+g[1].map(function(i){return '<div class="card tile" data-act="tab" data-v="'+i[0]+'"'+(i[4]?' data-sp="'+i[4]+'"':'')+'><div class="ti">'+ico(i[2])+'</div><b>'+i[1]+'</b><div class="mut">'+i[3]+'</div></div>'}).join('')+'</div>'}).join('');
 }
 function toolv(){return mb()+'<div class="sec">QR code &amp; NFC</div>'+qacc()}
@@ -747,11 +747,11 @@ function render(){
   document.documentElement.dir=(DB&&DB.set.lang==='ar')?'rtl':'ltr';
   if(S.locked||!DB){$('nav').innerHTML='';$('hs').innerHTML='';lockv();return}
   $('ver').textContent='v'+VER;$('hs').innerHTML=hdrAv();$('hs').setAttribute('aria-label','Mon profil');$('hl').textContent=DB.set.lang==='ar'?'AR':'FR';
-  var MORE=['more','pod','wa','rap','auto','vend','fin','tools','cat','net','deals','wl','wn','calc','sim','pro','set'];
+  var MORE=['more','pod','wa','rap','auto','vend','fin','tools','cat','net','deals','wl','wn','calc','sim','pro','set','ver'];
   var pe=DB.orders.filter(function(o){return o.status==='En attente'&&callDue(o)}).length;
   var M=[['home','Accueil','home'],['calls','Confirmer','phone'],['ord','Commandes','box'],['del','Livraison','truck'],['more','Compte','gear']];
   $('nav').innerHTML=M.map(function(m){var on=S.tab===m[0]||(m[0]==='more'&&MORE.indexOf(S.tab)>=0);return '<button data-act="tab" data-v="'+m[0]+'" class="'+(on?'on':'')+'">'+ico(m[2])+T(m[1])+(m[0]==='calls'&&pe?'<span class="bd">'+pe+'</span>':'')+'</button>'}).join('');
-  var V={home:home,calls:calls,ord:ordv,del:delv,vend:vendv,fin:finv,set:setv,more:morev,tools:toolv,cat:catv,net:net,deals:dealsv,wl:wlist,wn:wnew,calc:calcv,sim:simv,pro:prov}[S.tab]||home;
+  var V={home:home,calls:calls,ord:ordv,del:delv,vend:vendv,fin:finv,set:setv,more:morev,tools:toolv,cat:catv,net:net,deals:dealsv,wl:wlist,wn:wnew,calc:calcv,sim:simv,pro:prov,ver:verv}[S.tab]||home;
   var back=(MORE.indexOf(S.tab)>0)?'<button class="b full sm" data-act="tab" data-v="more" style="margin-bottom:10px">← Compte</button>':'';
   $('app').innerHTML=back+V();
   S.msg='';S.err=false;
@@ -3078,3 +3078,36 @@ document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttrib
           app.insertBefore(d,s);d.appendChild(pg);s.parentNode.removeChild(s)})}
     }catch(x){}};
 })();
+
+/* ===== 9.7.0 : menu « Version & mises à jour » ; plus de nom ni de version sur l'accueil ===== */
+var VU={msg:'',t:0,nv:''};
+var NEWS=[['9.7.0','Menu Version & mises à jour ; accueil épuré.'],['9.6.0','Menu Plus en groupes ; liste noire automatique ; alerte colis en retard.'],['9.5.0','Écrans simplifiés : l’essentiel d’abord, le reste dans « Plus d’options ».'],['9.4.0','Historique du colis, retour sous 7 jours, commander à nouveau, preuve d’achat.'],['9.3.0','Suivi client en chronologie datée avec détail de la commande.']];
+function verv(){
+  var sa=false;try{sa=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(x){}
+  var on=navigator.onLine!==false;
+  return mb()+'<div class="sec">Version & mises à jour</div>'
+   +'<div class="card"><div class="row"><b>Version installée</b><span class="tag">v'+VER+'</span></div>'
+   +'<div class="mut" style="margin-top:6px">'+(sa?'Application installée sur l’écran d’accueil':'Ouverte dans le navigateur')+' · '+(on?'en ligne':'hors ligne')+'</div>'
+   +(VU.t?'<div class="mut">Dernière vérification : '+new Date(VU.t).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'</div>':'')
+   +(VU.msg?'<p style="margin:10px 0 0;color:var(--tx)">'+e(VU.msg)+'</p>':'')
+   +'<div class="btns" style="margin-top:10px"><button class="b pri" data-vu="chk">Rechercher une mise à jour</button>'+(VU.nv?'<button class="b ok" data-vu="apply">Mettre à jour vers v'+e(VU.nv)+'</button>':'')+'</div>'
+   +'<p class="mut" style="margin-top:8px">La mise à jour ne supprime aucune donnée : vos commandes, vendeurs et réglages restent sur l’appareil.</p></div>'
+   +'<div class="card"><h2>Nouveautés</h2>'+NEWS.map(function(n){return '<div style="padding:5px 0"><b>v'+e(n[0])+'</b> <span class="mut">'+e(n[1])+'</span></div>'}).join('')+'</div>'
+   +'<div class="card"><p class="mut"><a href="privacy.html" target="_blank" rel="noopener">Politique de confidentialité</a></p></div>'}
+function vCheck(){
+  VU.msg='Recherche en cours…';VU.nv='';render();
+  var done=function(m,nv){VU.t=Date.now();VU.msg=m;VU.nv=nv||'';if(S.tab==='ver')render()};
+  if(navigator.onLine===false)return done('Vous êtes hors ligne : impossible de vérifier.');
+  fetch('app.js?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text()}).then(function(t){
+    var m=/VER='([0-9.]+)'/.exec(t);if(!m)throw 0;var nv=m[1];
+    function cmp(a,b){a=a.split('.').map(Number);b=b.split('.').map(Number);for(var i=0;i<3;i++){if((a[i]||0)!==(b[i]||0))return(a[i]||0)>(b[i]||0)?1:-1}return 0}
+    if(cmp(nv,VER)>0)done('Une nouvelle version est disponible : v'+nv+'.',nv);else done('Vous avez la dernière version (v'+VER+').')
+  }).catch(function(){done('Vérification impossible pour le moment. Réessayez avec une meilleure connexion.')})}
+function vApply(){
+  VU.msg='Mise à jour en cours…';render();
+  var go=function(){location.reload()};
+  var u=navigator.serviceWorker&&navigator.serviceWorker.getRegistrations?navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}):Promise.resolve();
+  u.then(function(){return window.caches&&caches.keys?caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}):0}).then(go,go)}
+document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-vu]');if(!b)return;ev.stopPropagation();
+  if(b.getAttribute('data-vu')==='chk')vCheck();else if(b.getAttribute('data-vu')==='apply')vApply()},true);
+(function(){var _r7=render;render=function(){_r7();try{var h=document.querySelector('header h1');if(h)h.style.visibility=(S.tab==='home'&&DB&&!S.locked)?'hidden':''}catch(x){}}})();
