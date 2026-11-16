@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.1',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -3080,7 +3080,7 @@ document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttrib
 
 /* ===== 9.7.0 : menu « Version & mises à jour » ; plus de nom ni de version sur l'accueil ===== */
 var VU={msg:'',t:0,nv:''};
-var NEWS=[['10.0.1','Cartes Commandes, Livraison et Finances plus visuelles (couleur par statut).'],['10.0.0','Nouveau design clair et premium, raccourcis sur l’accueil, mode d’emploi intégré.'],['9.7.0','Menu Version & mises à jour ; accueil épuré.'],['9.6.0','Menu Plus en groupes ; liste noire automatique ; alerte colis en retard.'],['9.5.0','Écrans simplifiés : l’essentiel d’abord, le reste dans « Plus d’options ».'],['9.4.0','Historique du colis, retour sous 7 jours, commander à nouveau, preuve d’achat.'],['9.3.0','Suivi client en chronologie datée avec détail de la commande.']];
+var NEWS=[['10.2.1','Compte : onglets Gestion et Opérations ; Paramètres en onglet séparé, en 8 rubriques.'],['10.0.1','Cartes Commandes, Livraison et Finances plus visuelles (couleur par statut).'],['10.0.0','Nouveau design clair et premium, raccourcis sur l’accueil, mode d’emploi intégré.'],['9.7.0','Menu Version & mises à jour ; accueil épuré.'],['9.6.0','Menu Plus en groupes ; liste noire automatique ; alerte colis en retard.'],['9.5.0','Écrans simplifiés : l’essentiel d’abord, le reste dans « Plus d’options ».'],['9.4.0','Historique du colis, retour sous 7 jours, commander à nouveau, preuve d’achat.'],['9.3.0','Suivi client en chronologie datée avec détail de la commande.']];
 function verv(){
   var sa=false;try{sa=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(x){}
   var on=navigator.onLine!==false;
@@ -3200,9 +3200,22 @@ document.addEventListener('keydown',function(ev){
   var b=ev.target;if(!b||!b.classList||!b.classList.contains('sr')||!b.hasAttribute('data-sc'))return;
   ev.preventDefault();b.click();
 });
+
+function cptFix(A){
+  var gi=SG.more||0;
+  [].forEach.call(A.querySelectorAll(':scope > details.mg'),function(d){
+    var sm=d.querySelector('summary'),nm=sm?sm.textContent.replace(/\s*\(\d+\)\s*$/,'').trim():'',k=-1;
+    MG.forEach(function(g,j){if(g[1].indexOf(nm)>=0)k=j});
+    var show=k<0||k===gi;
+    d.hidden=!show;d.style.display=show?'':'none';
+    var pg=d.querySelector('.pg');if(pg)pg.hidden=false;
+    if(show&&typeof OM==='object'&&OM[d.getAttribute('data-om')]===undefined)d.open=true;
+  });
+}
 (function(){var _r11=render;render=function(){_r11();try{
   if(!DB||S.locked)return;
   var A=document.getElementById('app');if(!A)return;
+  if(S.tab==='more')cptFix(A);
   var bk=A.firstElementChild;
   if(!bk||bk.tagName!=='BUTTON'||bk.getAttribute('data-act')!=='tab'||bk.getAttribute('data-v')!=='more')return;
   if(S.setBack&&(S.tab==='ver'||S.tab==='aide')){bk.removeAttribute('data-act');bk.removeAttribute('data-v');bk.setAttribute('data-sc','hub');bk.textContent='← Paramètres';[].forEach.call(document.getElementById('nav').children,function(n){n.classList.toggle('on',n.getAttribute('data-v')==='set')})}
