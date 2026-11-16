@@ -312,7 +312,7 @@
     try {
       if (!CL.tenants) await loadTenants();
       var ct = curTenant();
-      if (!ct) throw new Error('Crée d’abord ton entreprise (Compte → Paramètres → Connexions).');
+      if (!ct) throw new Error('Crée d’abord ton entreprise (Paramètres → Connexions).');
       await api('/rest/v1/rpc/register_webhook_key', { method: 'POST', body: JSON.stringify({ p_tenant: ct.id, p_key: key, p_vendor: vendor || '' }) });
     } catch (x) { throw new Error(tr(x.message)); }
   };
