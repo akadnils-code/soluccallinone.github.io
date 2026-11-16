@@ -513,3 +513,19 @@ nav button.on .i{color:#ff7900!important}
 .bars i.n,.pbar i{background:#ff7900!important}
 .pfc:before{background:#ff7900!important}
 .chip.on{background:#16181d!important}
+/* 10.0.1 – écrans Commandes, Livraison, Finances : cartes visuelles */
+.card:has(.s-Confirmé){border-left:5px solid #16a34a}
+.card:has(.s-Annulé),.card:has(.s-Refusé){border-left:5px solid #dc2626}
+.card:has(.s-Injoignable){border-left:5px solid #f59e0b}
+.card:has(.tag):not(:has(.s-Confirmé,.s-Annulé,.s-Refusé,.s-Injoignable)){border-left:5px solid #ff7900}
+.g4 .kpi,.grid .kpi,.grid3 .kpi{border:0;border-top:4px solid #ff7900;border-radius:14px;text-align:center;background:#fff}
+.g4 .kpi:nth-child(2),.grid .kpi.g{border-top-color:#16a34a}
+.g4 .kpi:nth-child(3){border-top-color:#2563eb}
+.g4 .kpi:nth-child(4){border-top-color:#16a34a}
+.grid .kpi.r{border-top-color:#dc2626}
+.kpi b{font-weight:800;color:var(--tx)}.kpi.g b{color:var(--ok)}.kpi.r b{color:var(--ko)}
+.st.on i{background:#ff7900!important;color:#fff!important}
+th{color:var(--tx);font-weight:800}
+table tr:nth-child(even) td{background:#fafafa}
+select{background-color:#fff}
+.card h2{display:flex;align-items:center;gap:8px}

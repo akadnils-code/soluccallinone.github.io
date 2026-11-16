@@ -12,15 +12,15 @@ puis à suivre chaque colis jusqu'au client.
 
 4
 00:00:12,600 --> 00:00:16,800
-L'accueil résume votre journée :
+En haut, cinq raccourcis ronds ouvrent vos écrans clés.
 
 5
 00:00:16,800 --> 00:00:21,000
-le nombre de commandes en attente et le taux de confirmation.
+Le bandeau résume la journée : commandes en attente,
 
 6
 00:00:21,000 --> 00:00:25,200
-Vous voyez aussi vos boutiques et les commandes à vérifier.
+taux de confirmation et gains en DH.
 
 7
 00:00:25,200 --> 00:00:29,400
@@ -108,13 +108,25 @@ Si une nouvelle version existe, touchez Mettre à jour.
 
 28
 00:01:53,400 --> 00:01:57,600
-Vous connaissez maintenant l'essentiel d'All In One.
+Besoin d'aide ? Touchez Aide sur l'accueil.
 
 29
 00:01:57,600 --> 00:02:01,800
-Ajoutez un vendeur, importez vos commandes, appelez vos clients.
+Huit sujets se déplient d'un toucher,
 
 30
 00:02:01,800 --> 00:02:06,000
+de Démarrer en 3 minutes jusqu'aux mises à jour.
+
+31
+00:02:06,000 --> 00:02:10,200
+Vous connaissez maintenant l'essentiel d'All In One.
+
+32
+00:02:10,200 --> 00:02:14,400
+Ajoutez un vendeur, importez vos commandes, appelez vos clients.
+
+33
+00:02:14,400 --> 00:02:18,600
 Bonne vente et bonnes livraisons !
 

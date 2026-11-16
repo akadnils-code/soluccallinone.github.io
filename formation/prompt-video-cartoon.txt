@@ -1,0 +1,68 @@
+PROMPT À COPIER DANS UNE IA VIDÉO (Pika, Kling, Runway, Hailuo, Veo, Sora…)
+
+Crée une vidéo d'animation CARTOON 2D de 2 minutes 20, format vertical 9:16 (1080x1920), en français, pour présenter l'application mobile « All In One – Amk Logistique », qui aide les vendeurs en ligne au Maroc à confirmer leurs commandes payées à la livraison et à suivre les colis.
+
+STYLE VISUEL
+- Cartoon 2D plat et coloré, traits arrondis, ambiance joyeuse et professionnelle (style vidéo explicative « motion design »).
+- Palette : orange vif #FF7900, blanc, noir #16181D, touches de vert (succès) et de rouge (annulation).
+- Personnage principal : Amine, un jeune vendeur marocain souriant, avec un smartphone. Un petit livreur à scooter apparaît dans les scènes de livraison.
+- Décors simples : bureau avec colis, rue de ville marocaine, écran de téléphone en gros plan.
+- Transitions fluides entre les scènes, petites animations (icônes qui rebondissent, coches vertes qui apparaissent, colis qui voyagent sur une carte).
+- Ne montre aucun logo de marque existante. L'écran du téléphone doit rester simple, orange et blanc.
+
+VOIX OFF ET SOUS-TITRES
+- Voix off en français, ton chaleureux et clair, rythme calme.
+- Sous-titres en français incrustés en bas de l'écran, en blanc sur bandeau noir semi-transparent, police grasse bien lisible, 2 lignes maximum.
+- Musique douce et entraînante, volume bas sous la voix.
+
+SCÈNES (durée indiquée = environ 12 secondes chacune)
+
+SCÈNE 1 – Bienvenue dans All In One
+Voix off et sous-titres : « Bienvenue dans All In One, l'application d'Amk Logistique. Elle sert à confirmer vos commandes payées à la livraison, puis à suivre chaque colis jusqu'au client. »
+À l'écran : Application installable sur téléphone (PWA), utilisable aussi sans connexion. Pensée pour les vendeurs et livreurs en ligne, notamment au Maroc.
+
+SCÈNE 2 – L'accueil
+Voix off et sous-titres : « En haut, cinq raccourcis ronds ouvrent vos écrans clés. Le bandeau résume la journée : commandes en attente, taux de confirmation et gains en DH. »
+À l'écran : Raccourcis : Confirmer, Commandes, Livraison, Vendeurs, Aide. Carte « Résumé du mois » : taux de confirmation et gains en DH. Liste « À vérifier » : commandes sans livreur ou à corriger.
+
+SCÈNE 3 – Confirmer
+Voix off et sous-titres : « Dans Confirmer, chaque commande a trois boutons : Appeler, Confirmé ou Annulé. Après trois tentatives sans réponse, la commande est suivie automatiquement. »
+À l'écran : Appeler ouvre directement le téléphone du client. Relances WhatsApp : message prêt à envoyer aux clients injoignables. « Plus d'options » regroupe les actions secondaires.
+
+SCÈNE 4 – Commandes
+Voix off et sous-titres : « Dans Commandes, retrouvez toutes les commandes avec leur statut. Filtrez par vendeur ou par statut, ou cherchez un nom. Pour une commande livrée : historique du colis ou commander à nouveau. »
+À l'écran : Le bouton Ajouter crée une commande à la main ou par import de fichier. Le client reçoit un lien de suivi daté, dans le style Jumia et Marjanemall. Retour gratuit affiché pendant 7 jours après la livraison.
+
+SCÈNE 5 – Livraison
+Voix off et sous-titres : « Dans Livraison, des compteurs montrent : à valider, validées, en cours et livrées. Une carte nationale affiche les livraisons en cours. »
+À l'écran : Suivi des colis en temps réel pour le client. Onglet Preuves & avis : preuve de livraison et notes des clients. Un code secret protège la remise du colis.
+
+SCÈNE 6 – Vendeurs partenaires
+Voix off et sous-titres : « Dans Vendeurs, ajoutez chaque boutique partenaire. Pour chacune, vous voyez les commandes, les articles et le solde de commission. »
+À l'écran : Un crédit en DH indique ce que vous devez ou ce qui est déjà payé. Chaque vendeur a une fiche, un QR code et son propre lien d'import.
+
+SCÈNE 7 – Finances & soldes
+Voix off et sous-titres : « Dans Finances, suivez le total gagné, déjà reçu et à encaisser. Le tableau par vendeur montre confirmation et livraison. Le rapport hebdomadaire se partage en un clic. »
+À l'écran : Solde négatif : le vendeur vous doit de l'argent. Solde positif : crédit déjà payé. Statistiques aussi par ville.
+
+SCÈNE 8 – Le menu Compte
+Voix off et sous-titres : « Le menu Compte range tout en groupes repliables : Pilotage, Développement commercial, Outils terrain, Prospection, puis Profil et paramètres. »
+À l'écran : Automatisations : relances, liste noire des mauvais clients, alerte colis en retard. Chaque groupe s'ouvre d'un toucher pour garder un écran propre.
+
+SCÈNE 9 – Version & mises à jour
+Voix off et sous-titres : « Dans Compte, Profil et paramètres, ouvrez Version et mises à jour. Touchez Rechercher une mise à jour. Si une nouvelle version existe, touchez Mettre à jour. »
+À l'écran : La mise à jour ne supprime aucune donnée. Les nouveautés de chaque version sont listées sur la même page.
+
+SCÈNE 10 – Le mode d'emploi
+Voix off et sous-titres : « Besoin d'aide ? Touchez Aide sur l'accueil. Huit sujets se déplient d'un toucher, de Démarrer en 3 minutes jusqu'aux mises à jour. »
+À l'écran : Chaque sujet est expliqué en étapes courtes. Écrivez-nous à logisticsallinoneamk@gmail.com pour toute question.
+
+SCÈNE 11 – Merci !
+Voix off et sous-titres : « Vous connaissez maintenant l'essentiel d'All In One. Ajoutez un vendeur, importez vos commandes, appelez vos clients. Bonne vente et bonnes livraisons ! »
+À l'écran : Retrouvez ce guide à tout moment dans Compte, Mode d'emploi.
+
+FIN
+Écran final orange avec le texte « All In One – Amk Logistique » et « Bonne vente et bonnes livraisons ! », Amine fait un grand sourire et un pouce levé.
+
+CONSIGNE TECHNIQUE
+Si l'outil limite la durée, génère chaque scène séparément (10 à 15 secondes), avec le même personnage et la même palette, puis assemble-les dans l'ordre. Conserve exactement le texte des sous-titres ci-dessus.

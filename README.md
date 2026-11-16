@@ -35,6 +35,10 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 1. GitHub > dépôt > Add file > Upload files : envoyer les fichiers ci-dessus, puis Commit changes.
 2. Rouvrir l'appli deux fois (mise à jour du cache). Le numéro de version s'affiche en haut.
 
+## Changements v10.0.1
+- Cartes Commandes, Livraison et Finances plus visuelles (bordure de couleur par statut, compteurs colorés).
+- Formation refaite (vidéo sous-titrée FR, guide illustré, prompt vidéo cartoon) dans `formation/`.
+
 ## Changements v10.0.0
 - Refonte visuelle : thème clair et épuré (blanc, orange vif, noir de contraste), en-tête blanc, navigation basse avec indicateur orange, bandeau d'accueil orange.
 - Raccourcis ronds sur l'accueil : Confirmer, Commandes, Livraison, Vendeurs, Aide.
