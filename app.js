@@ -531,7 +531,7 @@ function fbg(db,id,cb){var p,api;
   trackCall(api,p).then(cb).catch(function(x){if(window.console)console.error('Lecture du suivi :',x.message)})}
 function pub(o){if(!o||!DB.set.db||!trackApiUrl(DB.set.trackApi)||!DB.set.trackOwnerKey)return;
   var n=Date.now(),st=stage(o),b={v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:st,bad:bad(o)?1:0,c:o.courier||'',ve:vehOf(o.courier),t:n};
-  b['ev/e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};fbp(DB.set.db,tid(o),b)}
+  b.ev={};b.ev['e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};fbp(DB.set.db,tid(o),b)}
 function poll(){if(document.hidden)return;PT++;
   if(!DB||!DB.set.db||!DB.set.trackApi||!DB.set.trackOwnerKey||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
   DB.orders.filter(function(o){return o.tid&&!bad(o)&&stage(o)>=1&&(stage(o)<3||(stage(o)===3&&!o.rt&&PT%12===0))}).slice(-25).forEach(function(o){fbg(DB.set.db,o.tid,function(r){
@@ -702,7 +702,7 @@ function xact(a,t,id,o,g){
   else if(a==='demooff'){DB.orders=DB.orders.filter(function(x){return !x.demo});DB.vend=DB.vend.filter(function(x){return !x.demo});DB.cour=DB.cour.filter(function(x){return !x.demo});S.msg='Données de démonstration supprimées. Vos vraies données sont intactes.';return 1}
   else if(a==='pubo'){if(o&&DB.set.db)pub(o);return 2;}
   else if(a==='mz'){var zv=t.getAttribute('data-v');if(zv==='+')S.mz=Math.min(4,(S.mz||1)*1.6);else if(zv==='-')S.mz=Math.max(.5,(S.mz||1)*.6);else{S.full=!S.full;S.mz=1}rr();return 2;}
-  else if(a==='cst'){var cd=decq('l');if(cd&&cd.api&&cd.dk){var cv2=t.getAttribute('data-v'),nw=Date.now(),bb={t:nw};if(cv2==='En cours'){bb.s=2;CS.s=2;bb['ev/e'+nw]={t:nw,x:'Colis récupéré, le livreur est en route'}}else if(cv2==='Livré'){return 2}else{bb.bad=1;bb.r='Refusé';CS.s=-1;bb['ev/e'+nw]={t:nw,x:'Livraison refusée par le client'}}fbp(cd.db,cd.tid,bb);CS.ok='Statut envoyé ✓';renderCourier();return 2;}}
+  else if(a==='cst'){var cd=decq('l');if(cd&&cd.api&&cd.dk){var cv2=t.getAttribute('data-v'),nw=Date.now(),bb={t:nw};if(cv2==='En cours'){bb.s=2;CS.s=2;bb.ev={};bb.ev['e'+nw]={t:nw,x:'Colis récupéré, le livreur est en route'}}else if(cv2==='Livré'){return 2}else{bb.bad=1;bb.r='Refusé';CS.s=-1;bb.ev={};bb.ev['e'+nw]={t:nw,x:'Livraison refusée par le client'}}fbp(cd.db,cd.tid,bb);CS.ok='Statut envoyé ✓';renderCourier();return 2;}}
   else if(a==='dbtest'){var du=DB.set.db,api=trackApiUrl(DB.set.trackApi);if(!du||!api||!DB.set.trackOwnerKey){S.dbt='Renseigne la base, l’URL de la fonction et la clé propriétaire.';}else{S.dbt='Test en cours…';trackCall(api,{action:'ping',db:dbr(du),ownerKey:DB.set.trackOwnerKey}).then(function(){S.dbt='✓ Connexion à la fonction, à Firebase et clé propriétaire validée.'}).catch(function(x){S.dbt=x.message}).then(function(){render()})}}
   else if(a==='lfit'){LM.key='';LM.fitN++;rr();return 2;}
   else if(a==='lmaroc'){if(LM.map)LM.map.setView([31.8,-7.1],5);return 2;}
@@ -905,9 +905,9 @@ renderCourier=function(){
 document.addEventListener('click',function(ev){
   var t=ev.target.closest('[data-act]');if(!t)return;
   var a=t.getAttribute('data-act'),v=t.getAttribute('data-v'),n=Date.now(),dc=decq('t'),dk=decq('l');
-  if(a==='rate'&&dc){RS.n=+v;if(RS.n>=4){var b={rt:RS.n,t:n};b['ev/e'+n]={t:n,x:'Avis client : '+RS.n+'/5'};snd(dc,b,'Mon avis sur la commande « '+dc.p+' » : '+RS.n+'/5');CL.rt=RS.n;toast('Merci !');conf()}renderClient()}
-  else if(a==='rtag'&&dc){var b2={rt:RS.n,fb:v,t:n};b2['ev/e'+n]={t:n,x:'Avis client : '+RS.n+'/5 · '+v};snd(dc,b2,'Mon avis sur la commande « '+dc.p+' » : '+RS.n+'/5 ('+v+')');CL.rt=RS.n;CL.fb=v;toast('Merci, on s’en occupe.');renderClient()}
-  else if(a==='rq'&&dc){var b3={rq:v,t:n};b3['ev/e'+n]={t:n,x:'Demande client : '+v};snd(dc,b3,'Bonjour, concernant ma commande « '+dc.p+' » : '+v+'.');toast('Demande envoyée')}
+  if(a==='rate'&&dc){RS.n=+v;if(RS.n>=4){var b={rt:RS.n,t:n};b.ev={};b.ev['e'+n]={t:n,x:'Avis client : '+RS.n+'/5'};snd(dc,b,'Mon avis sur la commande « '+dc.p+' » : '+RS.n+'/5');CL.rt=RS.n;toast('Merci !');conf()}renderClient()}
+  else if(a==='rtag'&&dc){var b2={rt:RS.n,fb:v,t:n};b2.ev={};b2.ev['e'+n]={t:n,x:'Avis client : '+RS.n+'/5 · '+v};snd(dc,b2,'Mon avis sur la commande « '+dc.p+' » : '+RS.n+'/5 ('+v+')');CL.rt=RS.n;CL.fb=v;toast('Merci, on s’en occupe.');renderClient()}
+  else if(a==='rq'&&dc){var b3={rq:v,t:n};b3.ev={};b3.ev['e'+n]={t:n,x:'Demande client : '+v};snd(dc,b3,'Bonjour, concernant ma commande « '+dc.p+' » : '+v+'.');toast('Demande envoyée')}
   else if(a==='shr'){if(navigator.share)navigator.share({title:'Suivi de commande',url:location.href}).catch(function(){});else if(navigator.clipboard){navigator.clipboard.writeText(location.href);toast('Lien copié')}}
   else if(a==='cgo'&&dk){CS.ac=1;CS.rf=0;CS.cm='';renderCourier();var i=$('cdin');if(i)i.focus()}
   else if(a==='crf'&&dk){CS.rf=1;CS.ac=0;renderCourier()}
@@ -915,7 +915,7 @@ document.addEventListener('click',function(ev){
     if(!dk.api||!dk.dk){CS.cm='Lien de suivi sécurisé requis pour valider le code.';renderCourier();return 2}
     sdel(dk,c,function(){deliverOk(dk)},function(st){CS.cm=st===0?'Réseau indisponible, réessaie.':''+(st===429?'Trop d’essais : mission bloquée 30 min. Contacte le vendeur pour un nouveau code.':'Code incorrect, il reste '+attLeft(dk.tid)+' essai(s). Redemande-le au client.')+'';CS.sh=1;renderCourier();setTimeout(function(){CS.sh=0},500)})}
   else if(a==='crs'&&dk&&dk.api&&dk.dk){CS.rf=0;var k=t.getAttribute('data-k'),b4={r:v.slice(0,40),t:n};
-    if(k==='r'){cfire('Refusé');b4['ev/e'+(n+1)]={t:n+1,x:'Livraison échouée : '+v}}else{b4['ev/e'+n]={t:n,x:'Livreur : '+v+', nouvelle tentative prévue'};CS.ok='Signalé ✓'}
+    if(k==='r'){cfire('Refusé');b4.ev={};b4.ev['e'+(n+1)]={t:n+1,x:'Livraison échouée : '+v}}else{b4.ev={};b4.ev['e'+n]={t:n,x:'Livreur : '+v+', nouvelle tentative prévue'};CS.ok='Signalé ✓'}
     fbp(dk.db,dk.tid,b4);renderCourier()}
   else if(a==='inst'&&IP){IP.prompt();t.parentNode.remove()}
 });
