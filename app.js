@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.4',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.5',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -708,7 +708,7 @@ function xact(a,t,id,o,g){
   else if(a==='lfit'){LM.key='';LM.fitN++;rr();return 2;}
   else if(a==='lmaroc'){if(LM.map)LM.map.setView([31.8,-7.1],5);return 2;}
   else if(a==='nclose'){S.notif='';}
-  else if(a==='trk'){S.trk=S.trk===id?'':id;}
+  else if(a==='trk'){S.trk=S.trk===id?'':id;if(S.trk)setTimeout(function(){var m=document.querySelector('#app .lslot'),c=m&&m.closest('.card');if(c)window.scrollTo({top:Math.max(0,c.getBoundingClientRect().top+window.scrollY-72),behavior:'smooth'})},120)}
   else if(a==='flat'){S.flat=!S.flat;}
   else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.api&&dd.dk&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
   else if(a==='pform'){S.pform=!S.pform;S.msg='';}
@@ -848,7 +848,7 @@ function stOk(r){return !!(r&&r.enc&&typeof r.salt==='string'&&typeof r.iv==='st
 function stLoad(){return stOk(ST)?Promise.resolve(ST):storeGet().then(function(r){if(stOk(r))ST=r;return stOk(ST)?ST:null})}
 function doUnlock(){
   var f=fails();if(f.u>Date.now()){render();return}
-  var pin=g('pin').value;if(!pin)return;
+  var pin=g('pin').value.trim();if(!pin)return;
   stLoad().then(function(st){
     if(!st){S.msg='Données chiffrées introuvables ou illisibles. Recharge l’application : tes données ne sont pas supprimées.';render();return}
     var salt,iv,ct;try{salt=ub64(st.salt);iv=ub64(st.iv);ct=ub64(st.ct)}catch(x){S.msg='Enregistrement chiffré illisible. Recharge l’application : tes données ne sont pas supprimées. Si le problème continue, restaure ta dernière sauvegarde.';render();return}
