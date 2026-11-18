@@ -549,3 +549,17 @@ select{background-color:#fff}
 [dir=rtl] input[type=tel],[dir=rtl] input[inputmode=numeric],[dir=rtl] input[type=email],[dir=rtl] input[type=url]{direction:ltr;text-align:right}
 [dir=rtl] .mut,[dir=rtl] .card .row>span{unicode-bidi:plaintext}
 body{overflow-x:hidden}
+
+/* ===== 10.2.3 : bouton Synchroniser dans l'en-tête ===== */
+header #hsync{position:relative;display:flex;align-items:center;justify-content:center;padding:0;flex:none;width:40px;height:40px;min-width:40px}
+header #hsync[hidden]{display:none}
+header #hsync svg{display:block}
+header #hsync::after{content:"";position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;border:1.5px solid #fff;background:#98a2b3}
+header #hsync.ss-ok::after{background:#12b76a}
+header #hsync.ss-err::after{background:#f04438}
+header #hsync.ss-off::after{background:#98a2b3}
+header #hsync.ss-busy::after{background:#f79009}
+header #hsync.ss-busy svg{animation:hsyncspin 1s linear infinite}
+@keyframes hsyncspin{to{transform:rotate(360deg)}}
+[dir=rtl] header #hsync::after{right:auto;left:4px}
+@media (prefers-reduced-motion:reduce){header #hsync.ss-busy svg{animation:none}}
