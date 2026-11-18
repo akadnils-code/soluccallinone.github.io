@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.3',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.4',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -30,7 +30,7 @@ var telh=function(p){var m=mph(p);return 'tel:'+(m?'+212'+m.slice(1):e(p))};
 /* ---------- stockage chiffré ---------- */
 var enc=new TextEncoder(),dec=new TextDecoder();
 function b64(u){var s='';for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s)}
-function ub64(s){var a=atob(s),u=new Uint8Array(a.length);for(var i=0;i<a.length;i++)u[i]=a.charCodeAt(i);return u}
+function ub64(s){s=String(s==null?'':s).replace(/\s+/g,'').replace(/-/g,'+').replace(/_/g,'/').replace(/=+$/,'');while(s.length%4)s+='=';var a=atob(s),u=new Uint8Array(a.length);for(var i=0;i<a.length;i++)u[i]=a.charCodeAt(i);return u}
 var CRY=!!(window.crypto&&crypto.subtle);
 function dkey(pin,salt,it){return crypto.subtle.importKey('raw',enc.encode(pin),'PBKDF2',false,['deriveKey']).then(function(m){return crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:it,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])})}
 var IDB=null;
@@ -44,9 +44,9 @@ function storePut(str){
 function lsPut(str){try{localStorage.setItem(KEY,str)}catch(x){S.msg='Mémoire pleine : télécharge une sauvegarde puis supprime d’anciennes données.';S.err=true}}
 function save(){
   if(!DB)return;
-  if(!K){storePut(JSON.stringify({enc:0,d:DB}));return}
+  if(!K){ST=null;storePut(JSON.stringify({enc:0,d:DB}));return}
   var iv=crypto.getRandomValues(new Uint8Array(12)),my=++seq,snap=enc.encode(JSON.stringify(DB));
-  crypto.subtle.encrypt({name:'AES-GCM',iv:iv},K,snap).then(function(ct){if(my!==seq)return;storePut(JSON.stringify({enc:1,it:CIT,salt:b64(SALT),iv:b64(iv),ct:b64(new Uint8Array(ct))}))});
+  crypto.subtle.encrypt({name:'AES-GCM',iv:iv},K,snap).then(function(ct){if(my!==seq)return;var rec={enc:1,it:CIT,salt:b64(SALT),iv:b64(iv),ct:b64(new Uint8Array(ct))};ST=rec;storePut(JSON.stringify(rec))});
 }
 function fails(){try{return JSON.parse(localStorage.getItem('cod_f')||'{"n":0,"u":0}')}catch(x){return{n:0,u:0}}}
 function lockNow(){if(!K)return;DB=null;K=null;S.locked=true;S.msg='';render()}
@@ -844,11 +844,16 @@ document.addEventListener('change',function(ev){
   save();render();
 });
 /* ---------- verrouillage ---------- */
+function stOk(r){return !!(r&&r.enc&&typeof r.salt==='string'&&typeof r.iv==='string'&&typeof r.ct==='string'&&r.salt&&r.iv&&r.ct)}
+function stLoad(){return stOk(ST)?Promise.resolve(ST):storeGet().then(function(r){if(stOk(r))ST=r;return stOk(ST)?ST:null})}
 function doUnlock(){
   var f=fails();if(f.u>Date.now()){render();return}
-  var pin=g('pin').value;if(!pin||!ST)return;
-  var salt=ub64(ST.salt);
-  dkey(pin,salt,ST.it||IT).then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(ST.iv)},k,ub64(ST.ct)).then(function(pt){DB=fix(JSON.parse(dec.decode(pt)));K=k;SALT=salt;CIT=ST.it||IT;S.locked=false;S.msg='';try{localStorage.setItem('cod_f','{"n":0,"u":0}')}catch(x){}render()})}).catch(function(){f.n++;f.u=f.n>=5?Date.now()+Math.min(3600,30*Math.pow(2,f.n-5))*1000:0;try{localStorage.setItem('cod_f',JSON.stringify(f))}catch(x){}S.msg='Code incorrect.';render()});
+  var pin=g('pin').value;if(!pin)return;
+  stLoad().then(function(st){
+    if(!st){S.msg='Données chiffrées introuvables ou illisibles. Recharge l’application : tes données ne sont pas supprimées.';render();return}
+    var salt,iv,ct;try{salt=ub64(st.salt);iv=ub64(st.iv);ct=ub64(st.ct)}catch(x){S.msg='Enregistrement chiffré illisible. Recharge l’application : tes données ne sont pas supprimées. Si le problème continue, restaure ta dernière sauvegarde.';render();return}
+    return dkey(pin,salt,st.it||IT).then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:iv},k,ct).then(function(pt){DB=fix(JSON.parse(dec.decode(pt)));K=k;SALT=salt;CIT=st.it||IT;S.locked=false;S.msg='';try{localStorage.setItem('cod_f','{"n":0,"u":0}')}catch(x){}render()})}).catch(function(){f.n++;f.u=f.n>=5?Date.now()+Math.min(3600,30*Math.pow(2,f.n-5))*1000:0;try{localStorage.setItem('cod_f',JSON.stringify(f))}catch(x){}S.msg='Code incorrect.';render()})
+  }).catch(function(){S.msg='Déverrouillage impossible pour le moment. Recharge l’application : tes données ne sont pas supprimées.';render()})
 }
 /* ---------- démarrage ---------- */
 function boot(){
@@ -2245,15 +2250,15 @@ document.addEventListener('click',function(ev){var t=ev.target,q=t.closest&&t.cl
     if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:'Preuve de livraison · '+y.name+' · '+new Date(y.pod.ts).toLocaleString(LOC())});else{var l=document.createElement('a');l.href=y.pod.i;l.download=f.name;l.click()}})}},true);
 
 /* ===== 8.8 : sous-onglets (une vue à la fois : on supprime la surcharge) ===== */
-var _r8=render,TMAP={wa:['calls',1],rap:['fin',1],pod:['del',1],wn:['wl',1]},ST={},TB={calls:{f:waHTML,n:['📞 Appels à passer','💬 Relances WhatsApp']},del:{f:podHTML,n:['🛵 Suivi des colis','📸 Preuves & avis']},fin:{f:rapHTML,n:['💰 Résultats','📊 Rapport hebdo']},wl:{f:wnew,n:['📒 Carnet','➕ Nouveau prospect']},net:{f:netAdd,n:['👥 Contacts','➕ Ajouter']},deals:{f:margev,n:['🤝 Affaires','🧮 Simulateur de marge']}};
-render=function(){if(TMAP[S.tab]){ST[TMAP[S.tab][0]]=TMAP[S.tab][1];S.tab=TMAP[S.tab][0]}
+var _r8=render,TMAP={wa:['calls',1],rap:['fin',1],pod:['del',1],wn:['wl',1]},STB={},TB={calls:{f:waHTML,n:['📞 Appels à passer','💬 Relances WhatsApp']},del:{f:podHTML,n:['🛵 Suivi des colis','📸 Preuves & avis']},fin:{f:rapHTML,n:['💰 Résultats','📊 Rapport hebdo']},wl:{f:wnew,n:['📒 Carnet','➕ Nouveau prospect']},net:{f:netAdd,n:['👥 Contacts','➕ Ajouter']},deals:{f:margev,n:['🤝 Affaires','🧮 Simulateur de marge']}};
+render=function(){if(TMAP[S.tab]){STB[TMAP[S.tab][0]]=TMAP[S.tab][1];S.tab=TMAP[S.tab][0]}
   _r8();if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
-  var T=TB[S.tab],A=$('app');if(!T||!A)return;var i=ST[S.tab]||0,w0=document.createElement('div'),w1=document.createElement('div');
+  var T=TB[S.tab],A=$('app');if(!T||!A)return;var i=STB[S.tab]||0,w0=document.createElement('div'),w1=document.createElement('div');
   w0.id='st0';w1.id='st1';[].slice.call(A.children).forEach(function(c){w0.appendChild(c)});
   w1.innerHTML=T.f().replace(/<button class="b full sm"[^>]*>← Compte<\/button>/,'');w0.hidden=!!i;w1.hidden=!i;
   A.insertAdjacentHTML('afterbegin','<div class="seg">'+T.n.map(function(t,k){return '<button data-st="'+k+'"'+(k===i?' class="on"':'')+'>'+t+'</button>'}).join('')+'</div>');
   A.appendChild(w0);A.appendChild(w1);if(window.trAll)window.trAll(w1)};
-document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-st]');if(!b)return;var i=+b.getAttribute('data-st');ST[S.tab]=i;
+document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-st]');if(!b)return;var i=+b.getAttribute('data-st');STB[S.tab]=i;
   [].forEach.call(b.parentNode.children,function(x,k){x.className=k===i?'on':''});var a0=$('st0'),a1=$('st1');if(a0)a0.hidden=!!i;if(a1)a1.hidden=!i;
   window.scrollTo({top:0});if(typeof LM!=='undefined'&&LM.map)setTimeout(function(){LM.map.invalidateSize()},60)},true);
 
@@ -2282,9 +2287,9 @@ function bioEnable(){if(!K)return toast('Crée d’abord un code PIN (Paramètre
   navigator.credentials.create({publicKey:{challenge:rnd(32),rp:{name:'All In One · Amk Logistique'},user:{id:rnd(16),name:'amk',displayName:'Amk Logistique'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},timeout:60000}})
    .then(function(c){return kvPut('bioK',K).then(function(){localStorage.setItem('cod_bio',b64(new Uint8Array(c.rawId)));toast('Empreinte / visage activés ✅');render()})}).catch(function(){toast('Activation annulée ou impossible.')})}
 function bioOff(){try{localStorage.removeItem('cod_bio')}catch(x){}kvPut('bioK',null).catch(function(){});toast('Empreinte / visage désactivés.');render()}
-function bioUnlock(){var id=localStorage.getItem('cod_bio');if(!id||!ST)return;
-  navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:ub64(id)}],userVerification:'required',timeout:60000}}).then(function(){return kvGet('bioK')})
-   .then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(ST.iv)},k,ub64(ST.ct)).then(function(pt){DB=fix(JSON.parse(dec.decode(pt)));K=k;SALT=ub64(ST.salt);CIT=ST.it||IT;S.locked=false;S.msg='';render()})})
+function bioUnlock(){var id=localStorage.getItem('cod_bio');if(!id)return;var st=null;
+  stLoad().then(function(r){if(!r)throw 0;st=r;return navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:ub64(id)}],userVerification:'required',timeout:60000}})}).then(function(){return kvGet('bioK')})
+   .then(function(k){return crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(st.iv)},k,ub64(st.ct)).then(function(pt){DB=fix(JSON.parse(dec.decode(pt)));K=k;SALT=ub64(st.salt);CIT=st.it||IT;S.locked=false;S.msg='';render()})})
    .catch(function(){S.msg='Empreinte / visage indisponible : utilise ton code.';render()})}
 var IMPB=0;
 function impPull(man){var db=DB&&DB.set.db,k=DB&&DB.set.ikey;if(!db||!k||IMPB)return man&&toast('Renseigne d’abord le lien Firebase (Paramètres → Connexions).');IMPB=1;var u;try{u=dbr(db)+'/import/'+encodeURIComponent(k)}catch(x){IMPB=0;return man&&toast('Adresse Firebase invalide.')}
