@@ -14,7 +14,8 @@ var e=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){ret
 var $=function(i){return document.getElementById(i)};
 var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)};
 var today=function(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)};
-var fm=function(x){return Math.round((+x||0)*10)/10===Math.round(x)?Math.round(x).toLocaleString('fr-FR'):(Math.round((+x||0)*10)/10).toLocaleString('fr-FR')};
+function LOC(){var l='fr';try{l=window.curL?window.curL():'fr'}catch(x){}return l==='ar'?'ar-MA-u-nu-latn':l==='en'?'en-GB':'fr-FR'}
+var fm=function(x){return Math.round((+x||0)*10)/10===Math.round(x)?Math.round(x).toLocaleString(LOC()):(Math.round((+x||0)*10)/10).toLocaleString(LOC())};
 var pct=function(a,b){return b?Math.round(100*a/b)+' %':'—'};
 var r1=function(x){return Math.round(x*10)/10};
 /* ---------- icônes ---------- */
@@ -936,12 +937,12 @@ addEventListener('online',function(){toast('Connexion rétablie')});
 addEventListener('beforeinstallprompt',function(ev){ev.preventDefault();IP=ev;if(Q.get('t')||Q.get('l')||Q.get('v'))return;var x=document.createElement('div');x.className='tst';x.innerHTML='Installer l’application sur ton écran d’accueil<br><button class="b sm" data-act="inst" style="margin-top:6px">Installer</button>';document.body.appendChild(x);setTimeout(function(){x.remove()},12000)});
 
 /* ===== v6 : catalogue, créneaux, photo de preuve, notifications, darija ===== */
-var DR=0,NS=null,BP=0,DAR={'Suivi de ta commande':'تتبع الطلب ديالك','Ma mission':'المهمة ديالي','Code de livraison':'كود التوصيل','Un souci ?':'عندك شي مشكل؟','Reporter la livraison':'أجّل التوصيل','Changer l’adresse':'بدّل العنوان','Livreur injoignable':'الموزع ما كيجاوبش','Autre problème':'مشكل آخر','Comment s’est passée la livraison ?':'كيفاش دازت عملية التوصيل؟','Merci pour ton avis':'شكرا على رأيك','Bon à savoir':'مزيان تعرف','Partager ce suivi':'شارك التتبع','Code du client':'كود الزبون','Valider la livraison':'أكّد التوصيل','Pourquoi ?':'علاش؟','Client absent':'الزبون ماشي موجود','Report demandé':'الزبون طلب التأجيل','Colis refusé':'الزبون رفض الكولي','Adresse introuvable':'العنوان ما تلقاش','Livraison validée':'التوصيل تأكد','Comment ça marche':'كيفاش كيخدم','Étapes':'المراحل','Photo de preuve':'تصويرة الإثبات','Prendre la photo':'صوّر الكولي','Envoyer ma commande sur WhatsApp':'صيفط الطلب ديالي فواتساب','Contacter le service':'تواصل مع الخدمة','Livrée':'تسلّم','En cours de livraison':'جاري التوصيل','Validée':'مقبولة','En attente de validation':'كتسنى التأكيد','Distance restante':'المسافة لباقية','Arrivée estimée':'الوصول المتوقع','Choisir':'اختار','Catalogue':'الكتالوج','Créneau de livraison':'وقت التوصيل','Total à payer à la livraison':'المجموع اللي غتخلص عند التوصيل','Être prévenu à chaque étape':'توصل بإشعار فكل مرحلة','Activer les notifications':'فعّل الإشعارات','Peu importe':'أي وقت','Matin (9h–12h)':'الصباح (9h–12h)','Après-midi (12h–17h)':'العشية (12h–17h)','Soir (17h–21h)':'الليل (17h–21h)'};
+var DR=0,NS=null,BP=0,DAR0={'Suivi de ta commande':'تتبع الطلب ديالك','Ma mission':'المهمة ديالي','Code de livraison':'كود التوصيل','Un souci ?':'عندك شي مشكل؟','Reporter la livraison':'أجّل التوصيل','Changer l’adresse':'بدّل العنوان','Livreur injoignable':'الموزع ما كيجاوبش','Autre problème':'مشكل آخر','Comment s’est passée la livraison ?':'كيفاش دازت عملية التوصيل؟','Merci pour ton avis':'شكرا على رأيك','Bon à savoir':'مزيان تعرف','Partager ce suivi':'شارك التتبع','Code du client':'كود الزبون','Valider la livraison':'أكّد التوصيل','Pourquoi ?':'علاش؟','Client absent':'الزبون ماشي موجود','Report demandé':'الزبون طلب التأجيل','Colis refusé':'الزبون رفض الكولي','Adresse introuvable':'العنوان ما تلقاش','Livraison validée':'التوصيل تأكد','Comment ça marche':'كيفاش كيخدم','Étapes':'المراحل','Photo de preuve':'تصويرة الإثبات','Prendre la photo':'صوّر الكولي','Envoyer ma commande sur WhatsApp':'صيفط الطلب ديالي فواتساب','Contacter le service':'تواصل مع الخدمة','Livrée':'تسلّم','En cours de livraison':'جاري التوصيل','Validée':'مقبولة','En attente de validation':'كتسنى التأكيد','Distance restante':'المسافة لباقية','Arrivée estimée':'الوصول المتوقع','Choisir':'اختار','Catalogue':'الكتالوج','Créneau de livraison':'وقت التوصيل','Total à payer à la livraison':'المجموع اللي غتخلص عند التوصيل','Être prévenu à chaque étape':'توصل بإشعار فكل مرحلة','Activer les notifications':'فعّل الإشعارات','Peu importe':'أي وقت','Matin (9h–12h)':'الصباح (9h–12h)','Après-midi (12h–17h)':'العشية (12h–17h)','Soir (17h–21h)':'الليل (17h–21h)'};
 try{DR=localStorage.getItem('cod_dar')==='1'}catch(x){}
 function dar(){if(!(Q.get('t')||Q.get('l')||Q.get('v')))return;document.documentElement.dir=DR?'rtl':'ltr';
-  if(DR){var w=document.createTreeWalker($('app'),NodeFilter.SHOW_TEXT),n,l=[];while(n=w.nextNode())l.push(n);l.forEach(function(n){var k=n.nodeValue.trim();if(DAR[k])n.nodeValue=n.nodeValue.replace(k,DAR[k])});Array.prototype.forEach.call(document.querySelectorAll('#app option'),function(o){if(DAR[o.text])o.text=DAR[o.text]})}
+  if(DR&&window.trAll)window.trAll($('app'));
   if(!$('lng')){var b=document.createElement('button');b.id='lng';b.className='b sm';b.setAttribute('data-act','dar');b.style.cssText='position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:10px;z-index:50;min-width:0;flex:none';document.body.appendChild(b)}
-  $('lng').textContent=DR?'Français':'دارجة'}
+  $('lng').textContent=DR?'Français':'العربية'}
 function ntf(){var d=decq('t');if(!d||!('Notification' in window))return;var m=Object.assign({},d,CL),s=m.bad?-1:(m.s||0);
   if(NS!==null&&s!==NS&&Notification.permission==='granted'){var t=m.bad?'Livraison annulée ou refusée':STV[s];(navigator.serviceWorker?navigator.serviceWorker.ready.then(function(r){return r.showNotification(t,{body:m.p,icon:'icon-192.png',vibrate:[200,100,200]})}):Promise.reject()).catch(function(){try{new Notification(t,{body:m.p})}catch(x){}})}NS=s;
   if(d.db&&Notification.permission==='default'&&!$('ntc'))$('app').insertAdjacentHTML('afterbegin','<div class="card" id="ntc"><b>Être prévenu à chaque étape</b><button class="b full" style="margin-top:8px" data-act="ntf">Activer les notifications</button></div>')}
@@ -1977,7 +1978,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
 /* ===== 7.8 : accueil style marketplace (structure Jumia, couleurs premium) ===== */
 (function(){
 function MX(due,pe,gm,s,tr,tc){
-  var hr=new Date().getHours(),nm=(DB.set.holder||'').trim().split(/\s+/)[0]||DB.set.pco||'Amk Logistique',sub=[DB.set.pt,DB.set.pco].filter(Boolean).join(' · ')||DB.set.phone||(pe.length+' commande(s) en attente'),now=new Date(),dt=now.toLocaleDateString('fr-FR')+' • '+now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}),
+  var hr=new Date().getHours(),nm=(DB.set.holder||'').trim().split(/\s+/)[0]||DB.set.pco||'Amk Logistique',sub=[DB.set.pt,DB.set.pco].filter(Boolean).join(' · ')||DB.set.phone||(pe.length+' commande(s) en attente'),now=new Date(),dt=now.toLocaleDateString(LOC())+' • '+now.toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'}),
   bt=function(l,t,p,x){return '<button class="b'+(p?' pri':'')+'" data-act="'+(x?'goto':'tab')+'" data-v="'+t+'"'+(x||'')+'>'+l+'</button>'},
   bx=function(i,l,v,i2,v2,l2){return '<div class="sbx"><div class="sb"><div class="si">'+ico(i)+'</div><span>'+l+'</span><b>'+v+'</b></div><div class="sb2"><div class="si2">'+ico(i2)+'</div><b>'+v2+'</b><span>'+l2+'</span></div></div>'},
   cd=function(t,sb,body,btns){return '<div class="mxc"><h2>'+t+'</h2><div class="mut">'+sb+'</div>'+body+'<div class="btns">'+btns+'</div></div>'};
@@ -2043,28 +2044,35 @@ var R=[
 "1) Crée un vendeur dans Vendeurs. 2) Ajoute ses commandes dans Commandes → Ajouter (une, collées de WhatsApp ou par liste). 3) Appelle dans l’onglet Appels. Chaque vendeur a 30 commandes d’essai gratuites.¦1) Create a seller in Sellers. 2) Add their orders in Orders → Add (one, pasted from WhatsApp, or by list). 3) Call from the Calls tab. Each seller gets 30 free trial orders.¦1) أنشئ بائعاً في البائعين. 2) أضف طلباته في الطلبات ← إضافة (طلب واحد، أو لصق من واتساب، أو قائمة). 3) اتصل من تبويب المكالمات. لكل بائع 30 طلباً تجريبياً مجانياً."];
 var LN={en:{},ar:{}};
 R.forEach(function(l){var p=l.split('¦');LN.en[p[0]]=p[1];LN.ar[p[0]]=p[2]});
+if(window.AR_X)Object.keys(LN.ar).forEach(function(k){if(!AR_X[k])AR_X[k]=LN.ar[k]});
 var GM={en:['Good evening ','Good morning '],ar:['مساء الخير ','صباح الخير ']};
 var PT=[[/^(\d+) commande\(s\) à appeler maintenant$/,{en:function(m){return m[1]+' order(s) to call now'},ar:function(m){return m[1]+' طلب(ات) للاتصال الآن'}}],
  [/^(\d+) (?:commande\(s\) )?en attente$/,{en:function(m){return m[1]+' pending'},ar:function(m){return m[1]+' قيد الانتظار'}}],
  [/^(Bonsoir|Bonjour) (.+)$/,{en:function(m){return GM.en[m[1]==='Bonsoir'?0:1]+m[2]},ar:function(m){return GM.ar[m[1]==='Bonsoir'?0:1]+m[2]}}]];
 function tr(s,l){var k=s.trim();if(!k)return null;var d=LN[l],v=d&&d[k];if(v)return s.replace(k,function(){return v});
-  for(var i=0;i<PT.length;i++){var m=PT[i][0].exec(k),f=PT[i][1][l];if(m&&f)return s.replace(k,function(){return f(m)})}return null}
+  for(var i=0;i<PT.length;i++){var m=PT[i][0].exec(k),f=PT[i][1][l];if(m&&f)return s.replace(k,function(){return f(m)})}
+  if(l==='ar'&&window.arTr)return window.arTr(s);return null}
 function walk(r,l){if(!r)return;var w=document.createTreeWalker(r,NodeFilter.SHOW_TEXT,null),n,L=[];
   while(n=w.nextNode()){var p=n.parentNode&&n.parentNode.nodeName;if(p!=='SCRIPT'&&p!=='STYLE'&&p!=='TEXTAREA')L.push(n)}
+  [].forEach.call(r.querySelectorAll?r.querySelectorAll('option:not([value])'):[],function(o){o.setAttribute('value',o.textContent)});
   L.forEach(function(n){var t=tr(n.nodeValue,l);if(t)n.nodeValue=t});
   [].forEach.call(r.querySelectorAll('[placeholder],[aria-label],[title]'),function(x){['placeholder','aria-label','title'].forEach(function(a){var v=x.getAttribute(a),t=v&&tr(v,l);if(t)x.setAttribute(a,t)})})}
-window.trAll=function(r){var l=(DB&&DB.set.lang)||'fr';if(l!=='fr')walk(r,l)};var CD={fr:'FR',ar:'AR',en:'EN'},_rl=render;
+function curL(){if(DB&&DB.set&&DB.set.lang)return DB.set.lang;if(Q.get('t')||Q.get('l')||Q.get('v'))return DR?'ar':'fr';try{return localStorage.getItem('cod_lang')||'fr'}catch(x){return 'fr'}}
+window.trAll=function(r){var l=curL();if(l!=='fr')walk(r,l)};window.curL=curL;
+if(window.MutationObserver){var busy=0;new MutationObserver(function(ms){var l=curL();if(busy||l==='fr'||l==='tz')return;busy=1;try{ms.forEach(function(m){if(m.type==='characterData'){var t=tr(m.target.nodeValue,l);if(t)m.target.nodeValue=t}else[].forEach.call(m.addedNodes,function(n){if(n.nodeType===1&&n.id!=='lng')walk(n,l);else if(n.nodeType===3){var t=tr(n.nodeValue,l);if(t)n.nodeValue=t}})})}finally{busy=0}}).observe(document.body,{childList:true,subtree:true,characterData:true})}
+var CD={fr:'FR',ar:'AR',en:'EN'},_rl=render;
 render=function(){_rl();if(!DB||S.locked)return;var l=DB.set.lang||'fr';if(l==='tz'){l=DB.set.lang='fr';save()}
   document.documentElement.dir=l==='ar'?'rtl':'ltr';document.documentElement.lang=l;
-  var hl=$('hl');if(hl)hl.textContent=CD[l]||'FR';if(l!=='fr'){walk($('app'),l);walk($('nav'),l)}};
+  var hl=$('hl');if(hl)hl.textContent=CD[l]||'FR';if(l!=='fr'){walk($('app'),l);walk($('nav'),l);walk(document.querySelector('header'),l)}};
 document.addEventListener('click',function(ev){var t=ev.target,m=document.querySelector('.lgm');
   if(t.closest&&t.closest('#hl')){ev.stopImmediatePropagation();ev.preventDefault();if(m){m.remove();return}
     m=document.createElement('div');m.className='lgm';var c=DB&&DB.set.lang||'fr';
     m.innerHTML=[['fr','Français'],['ar','العربية'],['en','English']].map(function(x){return '<button data-l="'+x[0]+'"'+(c===x[0]?' class="on"':'')+'>'+x[1]+(c===x[0]?' ✓':'')+'</button>'}).join('');
     document.body.appendChild(m);return}
   var b=t.closest&&t.closest('.lgm button');
-  if(b){ev.stopImmediatePropagation();ev.preventDefault();DB.set.lang=b.getAttribute('data-l');save();m.remove();render();return}
+  if(b){ev.stopImmediatePropagation();ev.preventDefault();DB.set.lang=b.getAttribute('data-l');try{localStorage.setItem('cod_lang',DB.set.lang)}catch(x){}save();m.remove();render();return}
   if(m)m.remove()},true);
+if(Q.get('t')||Q.get('l')||Q.get('v'))dar();
 })();
 
 /* ===== 8.0 : suivi façon Waze + scooter / voiture réalistes ===== */
@@ -2186,7 +2194,7 @@ render=function(){var rp=S.tab==='rap'&&DB&&!S.locked&&!Q.get('v');if(rp)S.tab='
 /* ===== 8.6 : WhatsApp en un mot + mémo de rappel intégré ===== */
 function waMsg(o){return 'Bonjour '+o.name+' 👋 C’est '+(o.vendor||'votre boutique')+'.\nVotre commande : '+(o.product||'—')+(o.amount?' · '+fm(o.amount)+' DH':'')+(o.city?' · livraison à '+o.city:'')+'.\nRépondez par UN mot :\n✅ OUI pour confirmer\n❌ NON pour annuler\n✏️ MODIFIER pour changer l’adresse ou le produit\n(نعم = تأكيد · لا = إلغاء)\nMerci !'}
 function waHref(o){return 'https://wa.me/'+waNum(o.phone)+'?text='+encodeURIComponent(waMsg(o))}
-function hhmm(t){return new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}
+function hhmm(t){return new Date(t).toLocaleTimeString(LOC(),{hour:'2-digit',minute:'2-digit'})}
 function memoLines(){return DB.orders.filter(function(o){return o.status==='En attente'}).sort(function(x,y){return (x.cb||0)-(y.cb||0)}).slice(0,8).map(function(o){return '• '+o.name+' · '+(o.product||'—')+' · '+(callDue(o)?'à rappeler maintenant':'rappel à '+hhmm(o.cb))+(o.wa?' (WhatsApp envoyé)':'')})}
 function memoTxt(){var m=memoLines();return m.length?'\n\n🔔 Mémo de rappel :\n'+m.join('\n'):''}
 function waHTML(){var P=DB.orders.filter(function(o){return o.status==='En attente'}),sent=P.filter(function(o){return o.wa}).sort(function(x,y){return x.wa-y.wa}),todo=P.filter(function(o){return !o.wa}).slice(0,15),
@@ -2217,7 +2225,7 @@ function podHTML(){var O=DB.orders,rt=O.filter(function(o){return rating(o)}),av
   +satc()
   +'<div class="card"><h2>📸 Preuves de livraison ('+np+')</h2><div class="mut" style="margin-bottom:6px">Photo du colis remis, horodatée avec l’heure et la position GPS : elle règle les litiges.</div>'
   +(tp.length?tp.map(function(o){return '<div class="wi"><div class="row"><b>'+e(o.name)+'</b><span class="mut">'+e(o.city||'')+(o.amount?' · '+fm(o.amount)+' DH':'')+'</span></div>'
-    +(o.pod?'<img class="pod" src="'+o.pod.i+'" alt="Preuve"><div class="mut">✅ '+new Date(o.pod.ts).toLocaleString('fr-FR')+(o.pod.g?' · '+e(o.pod.g):'')+'</div><div class="wbt"><button class="b" data-ps="'+o.id+'">Partager</button><label class="b">Refaire<input type="file" accept="image/*" capture="environment" hidden data-pod="'+o.id+'"></label></div>'
+    +(o.pod?'<img class="pod" src="'+o.pod.i+'" alt="Preuve"><div class="mut">✅ '+new Date(o.pod.ts).toLocaleString(LOC())+(o.pod.g?' · '+e(o.pod.g):'')+'</div><div class="wbt"><button class="b" data-ps="'+o.id+'">Partager</button><label class="b">Refaire<input type="file" accept="image/*" capture="environment" hidden data-pod="'+o.id+'"></label></div>'
      :'<div class="wbt"><label class="b pri">📸 Prendre la photo<input type="file" accept="image/*" capture="environment" hidden data-pod="'+o.id+'"></label></div>')+'</div>'}).join(''):'<div class="mut">Aucune commande confirmée à prouver pour le moment.</div>')+'</div>'
   +'<div class="card"><h2>⭐ Sondages de satisfaction</h2>'+(dv.length?dv.map(function(o){return '<div class="wi"><div class="row"><b>'+e(o.name)+'</b><span class="mut">'+e(o.product||'')+'</span></div>'
     +(rating(o)?'<div style="color:#d4af37;font-size:20px;letter-spacing:2px">'+st(rating(o))+'</div>'
@@ -2228,13 +2236,13 @@ render=function(){var w=S.tab==='pod'&&DB&&!S.locked&&!Q.get('v');if(w)S.tab='mo
   if(w){S.tab='pod';$('app').innerHTML=podHTML();[].forEach.call($('nav').children,function(b){b.classList.toggle('on',b.getAttribute('data-v')==='more')})}};
 function oid(i){return DB.orders.filter(function(x){return x.id===i})[0]}
 document.addEventListener('change',function(ev){var t=ev.target,id=t.getAttribute&&t.getAttribute('data-pod'),o=id&&oid(id),f=t.files&&t.files[0];if(!o||!f)return;
-  var go=function(p){var ts=Date.now(),g=p?p.coords.latitude.toFixed(5)+','+p.coords.longitude.toFixed(5):'';img2(f,new Date(ts).toLocaleString('fr-FR')+(g?' · '+g:''),function(d){o.pod={i:d,ts:ts,g:g};save();render();burst()})};
+  var go=function(p){var ts=Date.now(),g=p?p.coords.latitude.toFixed(5)+','+p.coords.longitude.toFixed(5):'';img2(f,new Date(ts).toLocaleString(LOC())+(g?' · '+g:''),function(d){o.pod={i:d,ts:ts,g:g};save();render();burst()})};
   if(navigator.geolocation)navigator.geolocation.getCurrentPosition(go,function(){go(null)},{timeout:4000,maximumAge:60000});else go(null)},true);
 document.addEventListener('click',function(ev){var t=ev.target,q=t.closest&&t.closest('[data-sv]'),r=t.closest&&t.closest('[data-rt]'),s=t.closest&&t.closest('[data-ps]');
   if(q){var o=oid(q.getAttribute('data-sv'));if(o){o.sv=Date.now();save();setTimeout(render,400)}return}
   if(r){var p=r.getAttribute('data-rt').split('|'),x=oid(p[0]);if(x){x.rate=+p[1];x.rts=Date.now();save();render();if(x.rate>=4)burst()}return}
   if(s){var y=oid(s.getAttribute('data-ps'));if(!y||!y.pod)return;fetch(y.pod.i).then(function(b){return b.blob()}).then(function(b){var f=new File([b],'preuve-'+y.name+'.jpg',{type:'image/jpeg'});
-    if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:'Preuve de livraison · '+y.name+' · '+new Date(y.pod.ts).toLocaleString('fr-FR')});else{var l=document.createElement('a');l.href=y.pod.i;l.download=f.name;l.click()}})}},true);
+    if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:'Preuve de livraison · '+y.name+' · '+new Date(y.pod.ts).toLocaleString(LOC())});else{var l=document.createElement('a');l.href=y.pod.i;l.download=f.name;l.click()}})}},true);
 
 /* ===== 8.8 : sous-onglets (une vue à la fois : on supprime la surcharge) ===== */
 var _r8=render,TMAP={wa:['calls',1],rap:['fin',1],pod:['del',1],wn:['wl',1]},ST={},TB={calls:{f:waHTML,n:['📞 Appels à passer','💬 Relances WhatsApp']},del:{f:podHTML,n:['🛵 Suivi des colis','📸 Preuves & avis']},fin:{f:rapHTML,n:['💰 Résultats','📊 Rapport hebdo']},wl:{f:wnew,n:['📒 Carnet','➕ Nouveau prospect']},net:{f:netAdd,n:['👥 Contacts','➕ Ajouter']},deals:{f:margev,n:['🤝 Affaires','🧮 Simulateur de marge']}};
@@ -2910,7 +2918,7 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
   tlink=function(o,k){var u=_tl2(o,k);if(k!=='t')return u;
     try{var i=u.indexOf('?t='),d=JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(u.slice(i+3))))));
       d.m=+o.amount||0;d.ad=o.address||'';d.od=o.date||'';return u.slice(0,i)+'?t='+encq(d)}catch(x){return u}};
-  function fdt(t){try{return new Date(t).toLocaleString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
+  function fdt(t){try{return new Date(t).toLocaleString(LOC(),{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
   function timeline(m,s,bad){
     var evs=Object.keys(m.ev||{}).map(function(k){return m.ev[k]}).sort(function(a,b){return a.t-b.t}),when=[];
     EVT.forEach(function(x,i){var f=evs.filter(function(v){return v.x===x})[0];when[i]=f?f.t:0});
@@ -2924,13 +2932,13 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
   function detail(m,s,bad){
     var rows=[];
     rows.push(['Produit',m.p]);rows.push(['Vendeur',m.v]);
-    if(m.od){var od=new Date(m.od+'T12:00:00');rows.push(['Commande passée le',isNaN(od)?m.od:od.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})])}
+    if(m.od){var od=new Date(m.od+'T12:00:00');rows.push(['Commande passée le',isNaN(od)?m.od:od.toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'})])}
     if(m.c)rows.push(['Livreur',m.c+(m.ve?' ('+m.ve+')':'')]);
     rows.push(['Option de livraison','Livraison à domicile']);
     rows.push(['Paiement',s===3&&!bad?'Réglé à la livraison':'À régler à la livraison']);
     if(m.m)rows.push(['Montant',m.m+' dh']);
     if(s===3&&!bad){var lv=Object.keys(m.ev||{}).map(function(k){return m.ev[k]}).filter(function(v){return v.x==='Colis livré'||/livr/i.test(v.x)&&!/route|cours/i.test(v.x)}).sort(function(x,y){return y.t-x.t})[0];
-      if(lv){var lim=lv.t+7*864e5,ld=new Date(lim).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});rows.push(['Retour',Date.now()<=lim?'Retour gratuit possible jusqu’au '+ld:'La période de retour s’est terminée le '+ld])}}
+      if(lv){var lim=lv.t+7*864e5,ld=new Date(lim).toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'});rows.push(['Retour',Date.now()<=lim?'Retour gratuit possible jusqu’au '+ld:'La période de retour s’est terminée le '+ld])}}
     if(m.ad||m.cc)rows.push(['Adresse de livraison',[m.ad,m.cc].filter(Boolean).join(' - ')]);
     return '<div class="card" id="tld"><h2>Détail de la commande</h2>'+rows.map(function(r){return '<div class="row" style="padding:5px 0;align-items:flex-start"><span class="mut">'+e(r[0])+'</span><span style="text-align:right;max-width:62%">'+e(r[1])+'</span></div>'}).join('')+'</div>'}
   var _rc4=renderClient;
@@ -2961,8 +2969,8 @@ document.addEventListener('click',function(ev){var t=ev.target;if(t&&t.getAttrib
   setDel=function(o,d){var p=o.delivery;_sd(o,d);if(p!==o.delivery&&d)log(o,d==='Livré'?'Livrée':d==='En cours'?'En cours de livraison':d)};
   function oid(b){var c=b.closest('.card'),s=c&&c.querySelector('select[data-id]');return s&&s.getAttribute('data-id')}
   function ofind(id){return DB.orders.filter(function(o){return o.id===id})[0]}
-  function dt(t){try{return new Date(t).toLocaleString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
-  function dd(t){try{return new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}catch(x){return ''}}
+  function dt(t){try{return new Date(t).toLocaleString(LOC(),{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(x){return ''}}
+  function dd(t){try{return new Date(t).toLocaleDateString(LOC(),{day:'numeric',month:'long',year:'numeric'})}catch(x){return ''}}
   function deliveredAt(o){var h=H(o).filter(function(x){return x.x==='Livrée'}).pop();return h?h.t:0}
   function retInfo(o){
     if(o.delivery!=='Livré')return '';
@@ -3087,7 +3095,7 @@ function verv(){
   return mb()+'<div class="sec">Version & mises à jour</div>'
    +'<div class="card"><div class="row"><b>Version installée</b><span class="tag">v'+VER+'</span></div>'
    +'<div class="mut" style="margin-top:6px">'+(sa?'Application installée sur l’écran d’accueil':'Ouverte dans le navigateur')+' · '+(on?'en ligne':'hors ligne')+'</div>'
-   +(VU.t?'<div class="mut">Dernière vérification : '+new Date(VU.t).toLocaleString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'</div>':'')
+   +(VU.t?'<div class="mut">Dernière vérification : '+new Date(VU.t).toLocaleString(LOC(),{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+'</div>':'')
    +(VU.msg?'<p style="margin:10px 0 0;color:var(--tx)">'+e(VU.msg)+'</p>':'')
    +'<div class="btns" style="margin-top:10px"><button class="b pri" data-vu="chk">Rechercher une mise à jour</button>'+(VU.nv?'<button class="b ok" data-vu="apply">Mettre à jour vers v'+e(VU.nv)+'</button>':'')+'</div>'
    +'<p class="mut" style="margin-top:8px">La mise à jour ne supprime aucune donnée : vos commandes, vendeurs et réglages restent sur l’appareil.</p></div>'

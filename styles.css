@@ -529,3 +529,23 @@ th{color:var(--tx);font-weight:800}
 table tr:nth-child(even) td{background:#fafafa}
 select{background-color:#fff}
 .card h2{display:flex;align-items:center;gap:8px}
+
+/* ===== Arabe : miroir RTL (bordures, marges, flottants, chronologie) ===== */
+[dir=rtl] .card:has(.s-Confirmé),[dir=rtl] .card:has(.s-Annulé),[dir=rtl] .card:has(.s-Refusé),[dir=rtl] .card:has(.s-Injoignable),[dir=rtl] .card:has(.tag):not(:has(.s-Confirmé,.s-Annulé,.s-Refusé,.s-Injoignable)){border-left:1px solid var(--br)}
+[dir=rtl] .card:has(.s-Confirmé){border-right:5px solid #16a34a}
+[dir=rtl] .card:has(.s-Annulé),[dir=rtl] .card:has(.s-Refusé){border-right:5px solid #dc2626}
+[dir=rtl] .card:has(.s-Injoignable){border-right:5px solid #f59e0b}
+[dir=rtl] .card:has(.tag):not(:has(.s-Confirmé,.s-Annulé,.s-Refusé,.s-Injoignable)){border-right:5px solid #ff7900}
+[dir=rtl] .old{margin-left:0;margin-right:6px}
+[dir=rtl] details.oc2>summary:after{margin-left:0;margin-right:8px}
+[dir=rtl] .mo-all,[dir=rtl] details.mg>summary:after{float:left}
+[dir=rtl] .sb2{padding-left:0;padding-right:6px}
+[dir=rtl] ol.aid{padding-left:0;padding-right:20px}
+[dir=rtl] .pg .tile,[dir=rtl] .sgi,[dir=rtl] .k.z{text-align:right}
+[dir=rtl] .k.z{padding-left:0;padding-right:9%}
+[dir=rtl] .pc .bd{left:auto;right:6px}
+[dir=rtl] .tli:not(:last-child):before{left:auto;right:11px}
+[dir=rtl] input,[dir=rtl] select,[dir=rtl] textarea{text-align:right}
+[dir=rtl] input[type=tel],[dir=rtl] input[inputmode=numeric],[dir=rtl] input[type=email],[dir=rtl] input[type=url]{direction:ltr;text-align:right}
+[dir=rtl] .mut,[dir=rtl] .card .row>span{unicode-bidi:plaintext}
+body{overflow-x:hidden}
