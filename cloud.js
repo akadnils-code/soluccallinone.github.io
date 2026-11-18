@@ -15,7 +15,7 @@
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (x) { return null; } }
   function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (x) {} }
   function sess() { return lsGet(SK); }
-  function redraw() { if (typeof render === 'function') render(); }
+  function redraw() { if (typeof render === 'function') render(); updSyncBtn(); }
 
   function tr(m) {
     m = String(m || '');
@@ -284,6 +284,7 @@
     var st = yGet();
     if (syncing || !st || !st.on || typeof DB === 'undefined' || !DB || !sess()) return null;
     syncing = true; CL.syncing = true;
+    updSyncBtn();
     try {
       var up = await pushAll(st), down = await pullAll(st);
       st.last = { at: Date.now(), up: up, down: down, err: '' };
@@ -301,10 +302,61 @@
       return null;
     } finally {
       syncing = false; CL.syncing = false;
-      if (manual) redraw();
+      if (manual) redraw(); else updSyncBtn();
     }
   }
   window.cloudSync = function () { return sync(true); };
+
+  /* ---------- bouton « Synchroniser » dans l'en-tête ----------
+     Même synchronisation que Réglages → Connexions → Compte cloud, accessible en un geste.
+     États : off (pas connecté / pas activé), ok, err, busy. */
+  function toastMsg(m) { if (typeof toast === 'function') toast(m); }
+  function syncState() {
+    var st = yGet(), c = curTenant();
+    if (!sess() || !st || !st.on || (c && st.tenant !== c.id)) return 'off';
+    if (syncing || CL.syncing) return 'busy';
+    return st.last && st.last.err ? 'err' : 'ok';
+  }
+  function updSyncBtn() {
+    var b = document.getElementById('hsync');
+    if (!b) {
+      var h = document.querySelector('header'), anchor = document.getElementById('hl') || document.getElementById('hs');
+      if (!h || !anchor) return;
+      b = document.createElement('button');
+      b.id = 'hsync'; b.type = 'button';
+      b.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 0 0-15.5-6.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15.5 6.2L21 16"/><path d="M21 21v-5h-5"/></svg>';
+      h.insertBefore(b, anchor);
+      b.addEventListener('click', onSyncBtn);
+    }
+    var s = syncState(), st = yGet();
+    b.className = 'ss-' + s;
+    b.disabled = s === 'busy';
+    b.setAttribute('aria-label', 'Synchroniser');
+    b.title = s === 'off' ? 'Synchronisation non activée'
+      : st && st.last ? (st.last.err ? 'Erreur : ' + st.last.err : 'Dernière synchronisation : ' + new Date(st.last.at).toLocaleString('fr-FR'))
+      : 'Synchroniser';
+    b.hidden = typeof DB === 'undefined' || !DB || !!(typeof S !== 'undefined' && S && S.locked);
+  }
+  async function onSyncBtn() {
+    var s = syncState();
+    if (s === 'busy') return;
+    if (typeof DB === 'undefined' || !DB) { toastMsg('Déverrouille l’application avant de synchroniser.'); return; }
+    if (s === 'off') {
+      if (typeof S !== 'undefined' && S) { S.tab = 'set'; S.sp = 'int'; }
+      redraw();
+      toastMsg('Connecte-toi puis active la synchronisation (Compte cloud).');
+      return;
+    }
+    var r = await sync(true);
+    updSyncBtn();
+    toastMsg(r ? 'Synchronisé : ' + r.up + ' envoyé(s), ' + r.down + ' reçu(s).' : (CL.err && CL.msg ? CL.msg : 'Synchronisation impossible pour le moment.'));
+  }
+  // Met à jour l'état du bouton après chaque affichage de l'application
+  if (typeof render === 'function') {
+    var _render = render;
+    window.render = function () { var r = _render.apply(this, arguments); updSyncBtn(); return r; };
+  }
+  updSyncBtn();
 
   // Webhook universel (étape 2d) : enregistre la clé d'import de l'entreprise courante
   window.cloudWebhookUrl = function (key) { return URL_ + '/functions/v1/webhook/' + key; };

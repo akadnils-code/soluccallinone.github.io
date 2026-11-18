@@ -2,6 +2,9 @@
    Chargé avant app.js ; utilisé par le module de langue et par les pages client / livreur / acheteur. */
 (function(){
 var X={
+"Déverrouille l’application avant de synchroniser.": "افتح قفل التطبيق قبل المزامنة.",
+"Connecte-toi puis active la synchronisation (Compte cloud).": "سجّل الدخول ثم فعّل المزامنة (الحساب السحابي).",
+"Synchronisation impossible pour le moment.": "تعذّرت المزامنة حاليًا.",
 "+ Ajouter un vendeur": "+ إضافة بائع",
 "Langue": "اللغة",
 "Me géolocaliser": "حدّد موقعي",
