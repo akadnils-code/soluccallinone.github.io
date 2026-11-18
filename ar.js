@@ -2,6 +2,9 @@
    Chargé avant app.js ; utilisé par le module de langue et par les pages client / livreur / acheteur. */
 (function(){
 var X={
+"Données chiffrées introuvables ou illisibles. Recharge l’application : tes données ne sont pas supprimées.": "البيانات المشفّرة غير موجودة أو غير مقروءة. أعد تحميل التطبيق: بياناتك لم تُحذف.",
+"Enregistrement chiffré illisible. Recharge l’application : tes données ne sont pas supprimées. Si le problème continue, restaure ta dernière sauvegarde.": "السجل المشفّر غير مقروء. أعد تحميل التطبيق: بياناتك لم تُحذف. إن استمرت المشكلة فاستعد آخر نسخة احتياطية.",
+"Déverrouillage impossible pour le moment. Recharge l’application : tes données ne sont pas supprimées.": "تعذّر فتح القفل حاليًا. أعد تحميل التطبيق: بياناتك لم تُحذف.",
 "Déverrouille l’application avant de synchroniser.": "افتح قفل التطبيق قبل المزامنة.",
 "Connecte-toi puis active la synchronisation (Compte cloud).": "سجّل الدخول ثم فعّل المزامنة (الحساب السحابي).",
 "Synchronisation impossible pour le moment.": "تعذّرت المزامنة حاليًا.",
