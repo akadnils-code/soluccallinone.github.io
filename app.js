@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.2.5',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.3.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -2879,23 +2879,30 @@ function cfPage(d){
   document.getElementById('nav').style.display='none';document.querySelector('header').style.display='none';window.__cf=d;
   $('app').innerHTML='<div class="card" style="max-width:480px;margin:12px auto"><h1>Bonjour '+e(d.n||'')+'</h1><p class="mut">'+e(d.b||'Ta boutique')+' te demande de confirmer ta commande avant l’expédition.</p><div class="card"><b>'+e(d.pr||'Commande')+'</b><div class="mut">Total à payer à la livraison : <b>'+e(String(d.t||0))+' dh</b></div></div>'
    +'<label>Adresse de livraison (rue, quartier, ville)</label><input id="cf-a" autocomplete="off" value="'+e([d.a,d.c].filter(Boolean).join(', '))+'"><div id="cf-s"></div><button class="b full" style="margin-top:8px" data-x9="cfgps">📍 Utiliser ma position actuelle</button><p class="mut" id="cf-m">Choisis ton adresse dans la liste pour qu’elle soit vérifiée.</p>'
-   +'<button class="b pri full" data-x9="cfok">✅ Je confirme ma commande</button><button class="b full" style="margin-top:8px" data-x9="cfno">❌ J’annule</button><p class="mut">Ton choix est envoyé par WhatsApp à la boutique.</p></div>'}
+   +'<button class="b pri full" data-x9="cfok">✅ Je confirme ma commande</button><button class="b full" style="margin-top:8px" data-x9="cfno">❌ J’annule</button><p class="mut">'+(d.k?'Ton choix est envoyé directement à la boutique.':'Ton choix est envoyé par WhatsApp à la boutique.')+'</p></div>'}
 var _r2=render;render=function(){if(Q.get('cf')){var d=decq('cf');if(d){cfPage(d);return}}_r2()};
 function cfMsg(t){var m=document.getElementById('cf-m');if(m)m.textContent=t}
 function cfSug(q){fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ma&accept-language=fr&q='+encodeURIComponent(q)).then(function(r){return r.json()}).then(function(j){
   CS=(j||[]).map(function(r){var a=r.address||{},st=[a.house_number,a.road||a.pedestrian||a.neighbourhood||a.suburb].filter(Boolean).join(' '),ct=a.city||a.town||a.village||a.county||'';return{t:[st,a.suburb&&a.suburb!==st?a.suburb:'',ct].filter(Boolean).join(', ')||r.display_name,lat:+r.lat,lng:+r.lon}});
   var b=document.getElementById('cf-s');if(b)b.innerHTML=CS.map(function(x,i){return '<button class="b full" style="margin-top:4px;text-align:left" data-x9="cfpick" data-id="'+i+'">'+e(x.t)+'</button>'}).join('')}).catch(function(){})}
 document.addEventListener('input',function(ev){if(ev.target.id!=='cf-a')return;CP.lat=CP.lng=null;cfMsg('Choisis ton adresse dans la liste pour qu’elle soit vérifiée.');clearTimeout(TM);var q=ev.target.value.trim();if(q.length<4){document.getElementById('cf-s').innerHTML='';return}TM=setTimeout(function(){cfSug(q)},450)},true);
-function cfSend(ok){var d=window.__cf,a=(document.getElementById('cf-a')||{}).value||'';if(!d||!d.w){alert('Contact de la boutique introuvable.');return}
-  if(ok&&!a.trim()){cfMsg('Écris ton adresse avant de confirmer.');return}
+function cfWa(ok,a){var d=window.__cf;
   var rep=SU()+'?rep='+encq({i:d.i,s:ok?'ok':'x',a:a.trim(),la:CP.lat,ln:CP.lng}),m=(ok?'✅ Commande confirmée':'❌ Commande annulée')+' · '+(d.pr||'')+'\n'+(ok?'Adresse : '+a.trim()+(CP.lat?' (vérifiée GPS)\nhttps://maps.google.com/?q='+CP.lat+','+CP.lng:' (non vérifiée)')+'\n':'')+'\nOuvrir dans mon appli : '+rep;
   location.href='https://wa.me/'+waNum(d.w)+'?text='+encodeURIComponent(m)}
+function cfDone(ok){var d=window.__cf||{};$('app').innerHTML='<div class="card" style="max-width:480px;margin:12px auto;text-align:center"><h1>'+(ok?'✅ Merci !':'Commande annulée')+'</h1><p>'+(ok?'Ta commande est confirmée. La boutique prépare l’expédition, le livreur te contactera.':'Ta commande est annulée. Aucune action de ta part n’est nécessaire.')+'</p>'+(d.w?'<a class="b full" target="_blank" rel="noopener" href="'+wa(d.w,'Bonjour, une question sur ma commande « '+(d.pr||'')+' ».')+'">Contacter la boutique</a>':'')+'</div>'}
+function cfSend(ok){var d=window.__cf,a=(document.getElementById('cf-a')||{}).value||'';if(!d||!d.w){alert('Contact de la boutique introuvable.');return}
+  if(ok&&!a.trim()){cfMsg('Écris ton adresse avant de confirmer.');return}
+  if(d.k&&d.u&&/^https:/.test(d.u)){cfMsg('Envoi en cours…');
+    fetch(d.u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:d.k,i:d.i,s:ok?'ok':'x',a:a.trim(),la:CP.lat,ln:CP.lng})}).then(function(r){return r.json().then(function(j){return{r:r,j:j}})}).then(function(z){if(z.r.ok&&z.j&&z.j.ok)cfDone(ok);else throw 0}).catch(function(){cfMsg('Envoi automatique impossible : on passe par WhatsApp…');setTimeout(function(){cfWa(ok,a)},900)});return}
+  cfWa(ok,a)}
 /* 3. retour du client : applique la réponse dans l'appli du propriétaire */
-function applyRep(r){var o=oid(r.i);Q.delete('rep');try{history.replaceState(null,'',location.pathname)}catch(x){}
-  if(!o){toast('Commande introuvable dans cette appli.');return}if(o.byClient||o.status!=='En attente'){toast('Cette réponse est déjà traitée.');return}
+function applyReply(r){var o=oid(r.i);if(!o)return 'miss';if(o.byClient||o.status!=='En attente')return 'dup';
   if(r.s==='ok'){if(r.a)o.address=r.a;if(okc(r.la,r.ln)){o.lat=+r.la;o.lng=+r.ln}o.byClient=1;setStatus(o,'Confirmé');toast('✅ '+o.name+' a confirmé'+(okc(r.la,r.ln)?' (adresse vérifiée GPS)':''))}
   else{o.byClient=1;o.reason='Annulé par le client';setStatus(o,'Annulé');toast('❌ '+o.name+' a annulé')}
-  save()}
+  return 'done'}
+window.aioApplyReply=applyReply;
+function applyRep(r){Q.delete('rep');try{history.replaceState(null,'',location.pathname)}catch(x){}
+  var z=applyReply(r);if(z==='miss'){toast('Commande introuvable dans cette appli.');return}if(z==='dup'){toast('Cette réponse est déjà traitée.');return}save()}
 var _r3=render;render=function(){if(DB&&Q.get('rep')){var r=decq('rep');if(r&&r.i)applyRep(r);else Q.delete('rep')}_r3()};
 /* 4. accueil : impact du mois + commandes à surveiller */
 var _hs=window.homeShops;
@@ -2910,6 +2917,8 @@ window.homeShops=function(){_hs();var A=$('app');if(!A||$('imp'))return;
 document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-x9]');if(!t)return;var a=t.getAttribute('data-x9'),id=t.getAttribute('data-id');
   if(a==='cf'){ev.preventDefault();var o=oid(id);if(!o)return;if(!DB.set.phone){toast('Renseigne d’abord ton numéro dans ton profil.');return}if(!/^http/.test(SU())){toast('Ouvre l’application depuis son adresse https.');return}
     var d={i:o.id,n:String(o.name||'').split(' ')[0],pr:o.product||'',t:(+o.amount||0),a:o.address||'',c:o.city||'',w:DB.set.phone,b:DB.set.pco||DB.set.holder||''};
+    if(window.cloudWebhookUrl&&DB.set.whk&&DB.set.whk===DB.set.ikey&&DB.set.rtok){d.u=cloudWebhookUrl('x').replace(/\/webhook\/.*$/,'/reply');d.k=DB.set.rtok}
+    else if(!window.__hint){window.__hint=1;setTimeout(function(){toast('Astuce : active « Réception automatique » (Réglages › Connexions) pour que les confirmations arrivent toutes seules.')},1500)}
     window.open(wa(o.phone,'Bonjour '+d.n+', ici '+(d.b||'votre boutique')+'. Merci de confirmer votre commande ('+d.pr+') et de vérifier votre adresse en 1 clic : '+SU()+'?cf='+encq(d)),'_blank')}
   else if(a==='cfpick'){var x=CS[+id];if(!x)return;document.getElementById('cf-a').value=x.t;CP.lat=x.lat;CP.lng=x.lng;document.getElementById('cf-s').innerHTML='';cfMsg('✅ Adresse vérifiée · position enregistrée')}
   else if(a==='cfgps'){if(!navigator.geolocation){cfMsg('Position indisponible sur cet appareil.');return}cfMsg('Localisation…');navigator.geolocation.getCurrentPosition(function(p){CP.lat=p.coords.latitude;CP.lng=p.coords.longitude;
