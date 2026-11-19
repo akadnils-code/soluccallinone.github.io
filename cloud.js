@@ -299,6 +299,22 @@
     return n;
   }
 
+  // Statuts du livreur (Récupéré / Livré / Refusé) déposés par la fonction « track »
+  async function pullEvents() {
+    var s = typeof DB !== 'undefined' && DB && DB.set, ct = curTenant();
+    if (!s || !ct || typeof window.aioApplyEvent !== 'function' || !s.ikey || s.whk !== s.ikey) return 0;
+    var t = await sha24(s.ikey + ':track');
+    if (s.ttok !== t) { s.ttok = t; if (typeof save === 'function') save(); }
+    var rows = await api('/rest/v1/order_events?select=id,order_id,kind,created_at&applied_at=is.null&tenant_id=eq.' + ct.id + '&order=created_at.asc&limit=100'), n = 0;
+    for (var i = 0; i < (rows || []).length; i++) {
+      var r = rows[i], z = window.aioApplyEvent({ i: r.order_id, e: r.kind });
+      if (z === 'miss') continue;
+      if (z === 'done') n++;
+      try { await api('/rest/v1/order_events?id=eq.' + r.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ applied_at: new Date().toISOString() }) }); } catch (x) {}
+    }
+    return n;
+  }
+
   // Synchronisation complète : envoi puis réception. Renvoie { up, down } ou null si ignorée.
   async function sync(manual) {
     var st = yGet();
@@ -308,6 +324,7 @@
     try {
       var up = await pushAll(st), down = await pullAll(st);
       try { down += await pullReplies(); } catch (x) {}
+      try { down += await pullEvents(); } catch (x) {}
       st.last = { at: Date.now(), up: up, down: down, err: '' };
       lsSet(YK, st);
       if (down) {
