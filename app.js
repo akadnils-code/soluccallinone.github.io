@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.3.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.3.1',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -574,7 +574,7 @@ function renderCourier(){
   var d=decq('l');if(!d)return solo('<h1>Mission</h1><div class="card"><p class="mut">Lien invalide.</p></div>');
   var gm=function(q){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},msg=function(st){return wa(d.w,'SUIVI '+d.id+' '+st+'\n'+d.p+' · '+d.n)},lv=!!(d.api&&d.dk&&d.tid);
   var pos=CS.gps?'https://maps.google.com/?q='+CS.gps[0]+','+CS.gps[1]:'',cs=CS.s!=null?CS.s:d.s,B=cfind(d.cc),kmc=(inMA(CS.gps)&&B)?Math.round(hav(CS.gps,B)*1.25):0;
-  var st=function(v,l,c){return lv?'<button class="b '+c+'" data-act="cst" data-v="'+v+'">'+l+'</button>':'<a class="b '+c+'" target="_blank" rel="noopener" href="'+msg(v)+'">'+l+'</a>'};
+  var EK={'En cours':'pickup','Livré':'delivered','Refusé':'refused'},st=function(v,l,c){if(d.tu&&d.tk&&!lv)return '<a class="b '+c+'" data-cev="'+EK[v]+'" href="'+msg(v)+'">'+l+'</a>';return lv?'<button class="b '+c+'" data-act="cst" data-v="'+v+'">'+l+'</button>':'<a class="b '+c+'" target="_blank" rel="noopener" href="'+msg(v)+'">'+l+'</a>'};
   solo('<h1>Ma mission</h1><div class="card"><b>'+e(d.p)+'</b>'+(d.m?'<div class="kpi" style="margin-top:8px"><span class="mut">À encaisser</span><b>'+fm(+d.m||0)+' dh</b></div>':'')+(CS.ok?'<p class="live">'+CS.ok+'</p>':'')+'</div>'
    +'<div class="card"><h2>1. Retrait chez le vendeur</h2><div>'+e(d.v)+'</div><div class="mut">'+e([d.va,d.vc].filter(Boolean).join(', '))+'</div><div class="btns">'+(d.vp?'<a class="b" href="tel:'+e(d.vp)+'">'+ico('phone')+' Appeler</a>':'')+'<a class="b" target="_blank" rel="noopener" href="'+gm([d.va,d.vc,'Maroc'].filter(Boolean).join(', '))+'">'+ico('pin')+' Itinéraire</a>'+st('En cours','Récupéré ✓','pri')+'</div></div>'
    +'<div class="card"><h2>2. Livraison au client</h2><div>'+e(d.n)+'</div><div class="mut">'+e([d.ca,d.cc].filter(Boolean).join(', '))+(kmc?' · ~'+kmc+' km':'')+'</div><div class="btns"><a class="b" href="tel:'+e(d.cp)+'">'+ico('phone')+' Appeler</a><a class="b" target="_blank" rel="noopener" href="'+gm([d.ca,d.cc,'Maroc'].filter(Boolean).join(', '))+'">'+ico('pin')+' Itinéraire</a></div><div class="btns">'+st('Livré','Livré ✓','ok')+st('Refusé','Refusé','ko')+'</div></div>'
@@ -2901,6 +2901,17 @@ function applyReply(r){var o=oid(r.i);if(!o)return 'miss';if(o.byClient||o.statu
   else{o.byClient=1;o.reason='Annulé par le client';setStatus(o,'Annulé');toast('❌ '+o.name+' a annulé')}
   return 'done'}
 window.aioApplyReply=applyReply;
+function applyEvent(ev){var o=oid(ev.i);if(!o)return 'miss';var tg=ev.e==='pickup'?'En cours':ev.e==='delivered'?'Livré':ev.e==='refused'?'Refusé':'';if(!tg)return 'dup';
+  if(o.status!=='Confirmé')return 'miss';if(o.delivery===tg||o.delivery==='Livré')return 'dup';if(tg==='En cours'&&o.delivery==='Refusé')return 'dup';
+  setDel(o,tg);S.notif=o.id;toast((tg==='Livré'?'✅ ':tg==='Refusé'?'❌ ':'🚚 ')+o.name+' : '+(tg==='En cours'?'colis récupéré par le livreur':tg==='Livré'?'livré':'refusé'));return 'done'}
+window.aioApplyEvent=applyEvent;
+var _tl3=tlink;
+tlink=function(o,k){var u=_tl3(o,k);if(k==='t'||!(window.cloudWebhookUrl&&DB.set.whk&&DB.set.whk===DB.set.ikey&&DB.set.ttok))return u;
+  try{var i=u.indexOf('?l='),d=decq2(u.slice(i+3));d.tu=cloudWebhookUrl('x').replace(/\/webhook\/.*$/,'/track');d.tk=DB.set.ttok;return u.slice(0,i)+'?l='+encq(d)}catch(x){return u}};
+function decq2(v){return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(v)))))}
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-cev]');if(!t)return;ev.preventDefault();
+  var d=decq('l');if(!d||!d.tu||!d.tk)return;var k=t.getAttribute('data-cev'),h=t.getAttribute('href');t.style.opacity='.6';
+  fetch(d.tu,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:d.tk,i:d.id,e:k})}).then(function(r){return r.json().then(function(j){return{r:r,j:j}})}).then(function(z){if(z.r.ok&&z.j&&z.j.ok){t.style.opacity='1';t.disabled=true;t.textContent='✓ Envoyé';toast('Envoyé au vendeur ✓')}else throw 0}).catch(function(){t.style.opacity='1';toast('Envoi impossible : passage par WhatsApp…');if(h)setTimeout(function(){location.href=h},800)})},true);
 function applyRep(r){Q.delete('rep');try{history.replaceState(null,'',location.pathname)}catch(x){}
   var z=applyReply(r);if(z==='miss'){toast('Commande introuvable dans cette appli.');return}if(z==='dup'){toast('Cette réponse est déjà traitée.');return}save()}
 var _r3=render;render=function(){if(DB&&Q.get('rep')){var r=decq('rep');if(r&&r.i)applyRep(r);else Q.delete('rep')}_r3()};

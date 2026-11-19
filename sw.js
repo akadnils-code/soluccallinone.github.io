@@ -1,4 +1,4 @@
-var V='cod-v79',T='cod-tiles-v3',F=['./','index.html','styles.css','ar.js','app.js','cloud.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-512-maskable.png','privacy.html','vendor/leaflet/leaflet.js','vendor/leaflet/leaflet.css'];
+var V='cod-v80',T='cod-tiles-v3',F=['./','index.html','styles.css','ar.js','app.js','cloud.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-512-maskable.png','privacy.html','vendor/leaflet/leaflet.js','vendor/leaflet/leaflet.css'];
 var API=/firebaseio\.com|router\.project-osrm\.org|nominatim\.openstreetmap\.org|photon\.komoot\.io/;
 var TILE=/basemaps\.cartocdn\.com|tile\.openstreetmap\.org|cdnjs\.cloudflare\.com/;
 var LINK=/[?&](t|l|v|go|card|cf|rep)=/;
