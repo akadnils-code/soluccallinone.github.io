@@ -284,35 +284,46 @@
     var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
     return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('').slice(0, 24);
   }
+  // Accusé de réception d'une ligne appliquée ; une erreur est remontée (jamais avalée) et la ligne reste à rejouer
+  async function ackRow(table, id) {
+    await api('/rest/v1/' + table + '?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ applied_at: new Date().toISOString() }) });
+  }
+  // Lit les lignes en attente par pages : une ligne qui attend sa commande ne bloque pas les suivantes
+  async function fetchPending(table, fields, tid, order) {
+    var all = [], PAGE = 100, MAXP = 10;
+    for (var p = 0; p < MAXP; p++) {
+      var rows = await api('/rest/v1/' + table + '?select=' + fields + '&applied_at=is.null&tenant_id=eq.' + tid + (order ? '&order=' + order : '') + '&limit=' + PAGE + '&offset=' + (p * PAGE));
+      rows = rows || [];
+      all = all.concat(rows);
+      if (rows.length < PAGE) break;
+    }
+    return all;
+  }
   async function pullReplies() {
     var s = typeof DB !== 'undefined' && DB && DB.set, ct = curTenant();
-    if (!s || !ct || typeof window.aioApplyReply !== 'function' || !s.ikey || s.whk !== s.ikey) return 0;
+    if (!s || !ct || typeof window.aioApplyReply !== 'function' || !s.ikey || s.whk !== s.ikey) return { n: 0, pending: 0, errors: [] };
     var t = await sha24(s.ikey + ':reply');
     if (s.rtok !== t) { s.rtok = t; if (typeof save === 'function') save(); }
-    var rows = await api('/rest/v1/order_replies?select=id,order_id,status,address,lat,lng&applied_at=is.null&tenant_id=eq.' + ct.id + '&limit=100'), n = 0;
-    for (var i = 0; i < (rows || []).length; i++) {
-      var r = rows[i], z = window.aioApplyReply({ i: r.order_id, s: r.status, a: r.address, la: r.lat, ln: r.lng });
-      if (z === 'miss') continue;
-      if (z === 'done') n++;
-      try { await api('/rest/v1/order_replies?id=eq.' + r.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ applied_at: new Date().toISOString() }) }); } catch (x) {}
-    }
-    return n;
+    var r = await AioEvents.drain({
+      fetchPending: function () { return fetchPending('order_replies', 'id,order_id,status,address,lat,lng', ct.id, 'created_at.asc'); },
+      apply: function (x) { return window.aioApplyReply({ i: x.order_id, s: x.status, a: x.address, la: x.lat, ln: x.lng }); },
+      ack: function (x) { return ackRow('order_replies', x.id); }
+    });
+    return { n: r.applied, pending: r.pending, errors: r.errors };
   }
 
-  // Statuts du livreur (Récupéré / Livré / Refusé) déposés par la fonction « track »
+  // Statuts du livreur (ancien circuit Supabase « track », conservé pour les liens déjà distribués).
+  // Les nouveaux liens passent par la fonction Firebase « track » (voir README, section Suivi des livreurs).
+  // Un événement dont la commande n'est pas encore présente reste en attente ; toute erreur est remontée.
   async function pullEvents() {
     var s = typeof DB !== 'undefined' && DB && DB.set, ct = curTenant();
-    if (!s || !ct || typeof window.aioApplyEvent !== 'function' || !s.ikey || s.whk !== s.ikey) return 0;
-    var t = await sha24(s.ikey + ':track');
-    if (s.ttok !== t) { s.ttok = t; if (typeof save === 'function') save(); }
-    var rows = await api('/rest/v1/order_events?select=id,order_id,kind,created_at&applied_at=is.null&tenant_id=eq.' + ct.id + '&order=created_at.asc&limit=100'), n = 0;
-    for (var i = 0; i < (rows || []).length; i++) {
-      var r = rows[i], z = window.aioApplyEvent({ i: r.order_id, e: r.kind });
-      if (z === 'miss') continue;
-      if (z === 'done') n++;
-      try { await api('/rest/v1/order_events?id=eq.' + r.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ applied_at: new Date().toISOString() }) }); } catch (x) {}
-    }
-    return n;
+    if (!s || !ct || typeof window.aioApplyEvent !== 'function' || !s.ikey || s.whk !== s.ikey) return { n: 0, pending: 0, errors: [] };
+    var r = await AioEvents.drain({
+      fetchPending: function () { return fetchPending('order_events', 'id,order_id,kind,created_at', ct.id, 'created_at.asc'); },
+      apply: function (x) { return window.aioApplyEvent({ i: x.order_id, e: x.kind }); },
+      ack: function (x) { return ackRow('order_events', x.id); }
+    });
+    return { n: r.applied, pending: r.pending, errors: r.errors };
   }
 
   // Synchronisation complète : envoi puis réception. Renvoie { up, down } ou null si ignorée.
@@ -323,15 +334,26 @@
     updSyncBtn();
     try {
       var up = await pushAll(st), down = await pullAll(st);
-      try { down += await pullReplies(); } catch (x) {}
-      try { down += await pullEvents(); } catch (x) {}
-      st.last = { at: Date.now(), up: up, down: down, err: '' };
+      var warns = [], waiting = 0;
+      var pr = [['Réponses clients', pullReplies], ['Événements livreur', pullEvents]];
+      for (var pi = 0; pi < pr.length; pi++) {
+        try {
+          var pres = await pr[pi][1]();
+          down += pres.n; waiting += pres.pending;
+          if (pres.errors.length) warns.push(pr[pi][0] + ' : ' + pres.errors.length + ' non traité(s) (' + pres.errors[0].message + '), nouvel essai à la prochaine synchronisation');
+        } catch (x) { warns.push(pr[pi][0] + ' : ' + tr(x.message) + ', nouvel essai à la prochaine synchronisation'); }
+      }
+      st.last = { at: Date.now(), up: up, down: down, err: warns.join(' · '), waiting: waiting };
       lsSet(YK, st);
       if (down) {
         if (typeof save === 'function') save();
         if (manual || !typing()) redraw();
       }
-      if (manual) { CL.msg = 'Synchronisation terminée : ' + up + ' envoyé(s), ' + down + ' reçu(s).'; CL.err = false; }
+      if (manual) {
+        CL.msg = warns.length ? 'Synchronisation terminée avec avertissement : ' + warns.join(' · ')
+          : 'Synchronisation terminée : ' + up + ' envoyé(s), ' + down + ' reçu(s)' + (waiting ? ', ' + waiting + ' événement(s) en attente de leur commande' : '') + '.';
+        CL.err = warns.length > 0;
+      }
       return { up: up, down: down };
     } catch (x) {
       st.last = { at: Date.now(), up: 0, down: 0, err: tr(x.message) };

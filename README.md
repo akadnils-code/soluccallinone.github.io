@@ -1,4 +1,4 @@
-# All In One — Amk Logistique (v10.2.2)
+# All In One — Amk Logistique (v10.3.1)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
@@ -39,6 +39,17 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
 - **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
 - **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Suivi des livreurs (v10.3.1)
+
+Un seul mécanisme pour les événements du livreur : la fonction Firebase `track` (`functions/tracking.js`, action `courierEvent`). Les boutons **Récupéré**, **Livré** (avec le code du client) et **Refusé** du lien livreur l'appellent avec un jeton propre à la commande ; la clé propriétaire n'apparaît jamais dans un lien.
+
+- Le serveur contrôle les droits et les transitions, et ignore les répétitions (un événement envoyé plusieurs fois ne change la commande qu'une fois).
+- Sans réseau, ou si la commande n'est pas encore publiée par le vendeur, l'événement reste sur le téléphone du livreur et est renvoyé automatiquement (bandeau d'état, bouton « Réessayer maintenant »). Un refus définitif (lien invalide, transition impossible) reste affiché.
+- Côté vendeur, les erreurs de suivi et de synchronisation sont affichées (bandeau + notification) ; les publications échouées sont rejouées.
+- Après mise à jour de `functions/`, redéploie la fonction : `firebase deploy --only functions:track` (non fait par cette version). Aucun changement de règles.
+- L'ancien circuit Supabase (`order_events`) n'est plus alimenté par les nouveaux liens ; il reste lu pour les liens déjà distribués. Voir `supabase/legacy/README.md`.
+- Tests : `npm test` (serveur, file livreur, et bout en bout si Playwright/Chromium est installé).
 
 ## Changements v10.2.2
 - Textes d'aide, messages d'erreur et mode d'emploi alignés sur le nouveau menu Paramètres (plus de renvoi vers « Compte → Sécurité », « Compte → Mon profil », « Compte → Connexions »).
