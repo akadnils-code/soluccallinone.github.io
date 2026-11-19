@@ -279,6 +279,26 @@
     return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
   }
 
+  // Réponses des clients (confirmer / annuler) déposées par la fonction « reply » : appliquées toutes seules
+  async function sha24(t) {
+    var b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+    return Array.prototype.map.call(new Uint8Array(b), function (x) { return ('0' + x.toString(16)).slice(-2); }).join('').slice(0, 24);
+  }
+  async function pullReplies() {
+    var s = typeof DB !== 'undefined' && DB && DB.set, ct = curTenant();
+    if (!s || !ct || typeof window.aioApplyReply !== 'function' || !s.ikey || s.whk !== s.ikey) return 0;
+    var t = await sha24(s.ikey + ':reply');
+    if (s.rtok !== t) { s.rtok = t; if (typeof save === 'function') save(); }
+    var rows = await api('/rest/v1/order_replies?select=id,order_id,status,address,lat,lng&applied_at=is.null&tenant_id=eq.' + ct.id + '&limit=100'), n = 0;
+    for (var i = 0; i < (rows || []).length; i++) {
+      var r = rows[i], z = window.aioApplyReply({ i: r.order_id, s: r.status, a: r.address, la: r.lat, ln: r.lng });
+      if (z === 'miss') continue;
+      if (z === 'done') n++;
+      try { await api('/rest/v1/order_replies?id=eq.' + r.id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ applied_at: new Date().toISOString() }) }); } catch (x) {}
+    }
+    return n;
+  }
+
   // Synchronisation complète : envoi puis réception. Renvoie { up, down } ou null si ignorée.
   async function sync(manual) {
     var st = yGet();
@@ -287,6 +307,7 @@
     updSyncBtn();
     try {
       var up = await pushAll(st), down = await pullAll(st);
+      try { down += await pullReplies(); } catch (x) {}
       st.last = { at: Date.now(), up: up, down: down, err: '' };
       lsSet(YK, st);
       if (down) {
