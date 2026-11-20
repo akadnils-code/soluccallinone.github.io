@@ -1,4 +1,4 @@
-# Ancienne fonction Edge `track` (Supabase) — non modifiée
+# Ancienne fonction Edge `track` (Supabase) — désactivée
 
-Elle est toujours ACTIVE en production avec un jeton à l'échelle du tenant. À remplacer par une réponse
-`410 Gone` ou à supprimer, une fois qu'aucun ancien lien livreur n'est en circulation. Action manuelle du propriétaire.
+Déployée en version 2 le 2026-11-20 : répond `410 Gone`. Les anciens liens livreurs doivent être renvoyés depuis l'app.
+La source d'origine reste dans `supabase/legacy/track.index.ts` (référence).

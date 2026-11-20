@@ -3,9 +3,9 @@
 - Serveur : `courierUpdate` (ancien) refuse `bad:1` tant que la commande n'est pas en cours (cohérent avec `courierEvent`), test ajouté.
 - Synchro Supabase : `trackAuth` et `dc` (jetons/codes de livraison) ne sont plus envoyés dans `orders.data` ; clés sensibles des réglages (`trackOwnerKey`, `ttok`, `rtok`, `whk`, `db`, `ikey`, `ckey`, `tiles`) exclues de l'envoi et de l'import ; secrets locaux conservés lors d'une réception. Tests unitaires + contrôle statique de `cloud.js`.
 - Événements en attente : au-delà de 1000, l'avertissement « traitement partiel » est affiché.
-- `supabase/proposed/` : migrations SQL **proposées, non appliquées, non testées** (sauvegarde + nettoyage + déclencheurs + retour arrière).
+- `supabase/proposed/` : migration SQL **appliquée en production le 2026-11-20** (sauvegarde, nettoyage de `orders.data`, déclencheurs de filtrage) ; ancienne fonction Edge `track` remplacée par un 410.
 - Limite connue : un événement livreur déjà « terminé » dans la file locale n'est pas renvoyé si l'action est refaite sur la même mission (le serveur reste idempotent).
-- Non vérifié : déploiement Firebase réel/émulateur, appareils réels hors ligne, synchro Supabase de bout en bout, SQL proposé.
+- Non vérifié : appareils réels hors ligne, synchro Supabase de bout en bout, essai réel après déploiement.
 - Tests : 86 (serveur, client, e2e Chromium), tous verts.
 
 

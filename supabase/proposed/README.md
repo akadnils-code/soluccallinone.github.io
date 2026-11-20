@@ -1,12 +1,10 @@
-# Migrations proposées — NON appliquées, NON testées sur une base
+# Migrations Supabase 10.3.1 — APPLIQUÉES en production le 2026-11-20
 
-Ces fichiers ne sont **pas** exécutés par l'application. Ils sont fournis pour relecture.
-Ordre et conditions :
+Migration `protect_tracking_secrets_10_3_1` (voir `01_protect_secrets.sql`, adapté : colonne `tenant_settings.data`) :
+- sauvegarde des secrets dans `private.orders_secrets_backup` (17 commandes) ;
+- `orders.data` nettoyé de `trackAuth` et `dc` ;
+- déclencheurs `trg_strip_order_secrets` et `trg_strip_setting_secrets` (filtrent aussi `import_local_data`).
 
-1. Déployer la fonction Firebase `track`, puis fusionner la PR (client 10.3.1 : n'envoie plus `trackAuth`, `dc`, clés).
-2. Vérifier que **tous** les appareils du vendeur sont passés à 10.3.1 (sinon ils re-pousseraient les secrets / les perdraient).
-3. Tester `01` sur une **branche Supabase** ou une copie, jamais directement en production.
-4. Appliquer `01`, puis vérifier que le suivi fonctionne encore (commande neuve + commande ancienne).
-5. `02` (retrait de l'ancienne fonction Edge `track`) seulement quand plus aucun lien ancien n'est utilisé.
-
-Retour arrière : `01_rollback.sql`.
+Ancienne fonction Edge `track` : remplacée par une réponse 410 (voir `02_disable_legacy_track.md`).
+Retour arrière des commandes : `01_rollback.sql` (supprime le déclencheur des commandes, remet les secrets sauvegardés).
+Le suivi des livreurs passe uniquement par la fonction Firebase `track`.

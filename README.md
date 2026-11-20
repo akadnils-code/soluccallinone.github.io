@@ -52,7 +52,7 @@ Un seul mécanisme pour les événements du livreur : la fonction Firebase `trac
 - Tests : `npm test` (serveur, file livreur, et bout en bout si Playwright/Chromium est installé).
 
 ### Secrets et synchronisation
-Les jetons de suivi (`trackAuth`), codes de livraison (`dc`) et clés sensibles des réglages restent sur l'appareil du vendeur : ils ne sont plus envoyés à Supabase. Voir `supabase/proposed/` (SQL proposé, non appliqué).
+Les jetons de suivi (`trackAuth`), codes de livraison (`dc`) et clés sensibles des réglages restent sur l'appareil du vendeur : ils ne sont plus envoyés à Supabase. Côté base, des déclencheurs les filtrent aussi (voir `supabase/proposed/`, appliqué le 2026-11-20).
 
 ## Changements v10.2.2
 - Textes d'aide, messages d'erreur et mode d'emploi alignés sur le nouveau menu Paramètres (plus de renvoi vers « Compte → Sécurité », « Compte → Mon profil », « Compte → Connexions »).
