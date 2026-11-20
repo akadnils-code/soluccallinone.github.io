@@ -513,31 +513,41 @@ function dbr(db){var u=String(db||'').trim().replace(/\/$/,'');if(!/^https:\/\/[
 function trackKey(){return b64(crypto.getRandomValues(new Uint8Array(32))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function trackKeys(o){var k=o.trackAuth||{},changed=false;['client','courier'].forEach(function(n){if(!k[n]){k[n]=trackKey();changed=true}});if(changed){o.trackAuth=k;save()}return k}
 function trackApiUrl(u){try{var x=new URL(String(u||''));return x.protocol==='https:'&&/^[a-z0-9-]+-[a-z0-9-]+\.cloudfunctions\.net$/i.test(x.hostname)&&x.pathname==='/track'&&!x.search&&!x.hash?x.href.replace(/\/$/,''):''}catch(x){return''}}
-function trackCall(api,body){var u=trackApiUrl(api);if(!u)return Promise.reject(new Error('URL de fonction Firebase invalide.'));
+function trackCall(api,body){var u=trackApiUrl(api);if(!u){var fe=new Error('URL de fonction Firebase invalide.');fe.fatal=true;return Promise.reject(fe)}
   return fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){if(!r.ok){var x=new Error(j.error||'Erreur du service de suivi ('+r.status+').');x.status=r.status;throw x}return j})})}
-function trackPayload(id,b){var t=Date.now();
+function trackPayload(id,b,regress){var t=Date.now();
   if(Q.get('t')){var c=decq('t');return c&&c.tid===id?{action:'clientUpdate',id:id,clientKey:c.ck,patch:b}:null}
   if(Q.get('l')){var l=decq('l');return l&&l.tid===id?{action:'courierUpdate',id:id,courierKey:l.dk,patch:b}:null}
   var o=DB&&DB.orders.filter(function(x){return x.tid===id})[0];if(!o)return null;
-  var k=trackKeys(o);return{action:'publish',db:dbr(DB.set.db),ownerKey:DB.set.trackOwnerKey,clientKey:k.client,courierKey:k.courier,deliveryCode:dcs(o),id:id,patch:b,t:t}}
-function fbp(db,id,b){var p=trackPayload(id,b);if(!p)return;
+  var k=trackKeys(o);return{action:'publish',db:dbr(DB.set.db),ownerKey:DB.set.trackOwnerKey,clientKey:k.client,courierKey:k.courier,deliveryCode:dcs(o),id:id,patch:b,t:t,allowRegress:regress===true}}
+var TKS={err:'',at:0};
+function pubqGet(){try{return JSON.parse(localStorage.getItem('aio_pubq')||'{}')||{}}catch(x){return{}}}
+function pubqSet(q){try{localStorage.setItem('aio_pubq',JSON.stringify(q))}catch(x){TKS.err='Mémoire du téléphone pleine : le suivi risque de ne pas être conservé.'}}
+function tkErr(x,id,owner,regress){var c=AioEvents.classify(x),prev=TKS.err;if(!owner&&!c.retry&&(c.status===409||(x&&x.status===409))){if(window.console)console.warn('Suivi (ignoré, état final) :',x&&x.message);return}TKS.err='Suivi : '+(c.retry?c.message:(x&&x.message)||c.message);TKS.at=Date.now();if(window.console)console.error('Suivi Firebase :',x&&x.message);
+  if(owner&&c.retry){var q=pubqGet(),e=q[id]||{tries:0};e.tries++;e.regress=!!(e.regress||regress);e.next=Date.now()+Math.min(300000,2000*Math.pow(2,e.tries));q[id]=e;pubqSet(q)}
+  if(prev!==TKS.err&&!Q.get('t')&&!Q.get('l')&&window.toast)toast(TKS.err)}
+/* publications propriétaire qui ont échoué : rejouées avec délai croissant tant que la commande existe */
+function pubqRun(force){if(!DB)return;var q=pubqGet(),n=Date.now(),go=[];Object.keys(q).forEach(function(id){var o=DB.orders.filter(function(x){return x.tid===id})[0];if(!o){delete q[id];return}if(force||q[id].next<=n){q[id].next=n+60000;go.push([o,q[id].regress])}});pubqSet(q);go.forEach(function(g){pub(g[0],g[1])})}
+function fbp(db,id,b,regress){var p=trackPayload(id,b,regress);if(!p)return;
   var api=Q.get('t')?(decq('t')||{}).api:Q.get('l')?(decq('l')||{}).api:DB&&DB.set.trackApi;
-  if(!api)return;
-  trackCall(api,p).catch(function(x){if(window.console)console.error('Suivi Firebase :',x.message)})}
+  if(!api)return;var owner=p.action==='publish';
+  trackCall(api,p).then(function(){if(/^Suivi/.test(TKS.err))TKS.err='';if(owner){var q=pubqGet();if(q[id]){delete q[id];pubqSet(q)}}},function(x){tkErr(x,id,owner,regress)})}
 function fbg(db,id,cb){var p,api;
   if(Q.get('t')){var c=decq('t');if(!c||c.tid!==id)return;p={action:'read',id:id,clientKey:c.ck};api=c.api}
   else if(Q.get('l')){var l=decq('l');if(!l||l.tid!==id)return;p={action:'read',id:id,courierKey:l.dk};api=l.api}
   else{var o=DB&&DB.orders.filter(function(x){return x.tid===id})[0];if(!o)return;api=DB.set.trackApi;p={action:'read',id:id,ownerKey:DB.set.trackOwnerKey,db:dbr(DB.set.db)}}
   if(!api)return;
-  trackCall(api,p).then(cb).catch(function(x){if(window.console)console.error('Lecture du suivi :',x.message)})}
-function pub(o){if(!o||!DB.set.db||!trackApiUrl(DB.set.trackApi)||!DB.set.trackOwnerKey)return;
+  trackCall(api,p).then(function(r){if(/^Lecture/.test(TKS.err))TKS.err='';try{cb(r)}catch(e){if(window.console)console.error('Traitement du suivi :',e)}},function(x){var c=AioEvents.classify(x);TKS.err='Lecture du suivi : '+(c.retry?c.message:(x&&x.message)||c.message);TKS.at=Date.now();if(window.console)console.error('Lecture du suivi :',x&&x.message)})}
+function pub(o,regress){if(!o||!DB.set.db||!trackApiUrl(DB.set.trackApi)||!DB.set.trackOwnerKey)return;
   var n=Date.now(),st=stage(o),b={v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:st,bad:bad(o)?1:0,c:o.courier||'',ve:vehOf(o.courier),t:n};
-  b.ev={};b.ev['e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};fbp(DB.set.db,tid(o),b)}
+  b.ev={};b.ev['e'+n]={t:n,x:bad(o)?'Commande annulée ou refusée':EVT[st]};fbp(DB.set.db,tid(o),b,regress)}
 function poll(){if(document.hidden)return;PT++;
   if(!DB||!DB.set.db||!DB.set.trackApi||!DB.set.trackOwnerKey||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;
-  DB.orders.filter(function(o){return o.tid&&!bad(o)&&stage(o)>=1&&(stage(o)<3||(stage(o)===3&&!o.rt&&PT%12===0))}).slice(-25).forEach(function(o){fbg(DB.set.db,o.tid,function(r){
+  pubqRun();var PL=DB.orders.filter(function(o){return o.tid&&!bad(o)&&stage(o)>=1&&(stage(o)<3||(stage(o)===3&&!o.rt&&PT%12===0))}),PW=PL;
+  if(PL.length>25){var pa=PC%PL.length;PW=PL.concat(PL).slice(pa,pa+25);PC=pa+25}
+  PW.forEach(function(o){fbg(DB.set.db,o.tid,function(r){
     if(!r)return;var ch=false;
-    if(r.bad&&!bad(o)){setDel(o,'Refusé');ch=true}else if(r.s===3&&stage(o)<3){if(aset().rv===0)setDel(o,'Livré');else if(!o.rd)o.rd=1;ch=true}else if(r.s===2&&stage(o)<2){setDel(o,'En cours');ch=true}
+    if(r.bad&&!bad(o)&&o.delivery!=='Livré'){setDel(o,'Refusé');ch=true}else if(r.s===3&&stage(o)<3){if(aset().rv===0)setDel(o,'Livré');else if(!o.rd)o.rd=1;ch=true}else if(r.s===2&&stage(o)<2){setDel(o,'En cours');ch=true}
     if(r.pos&&o.pt!==r.pt){o.pos=r.pos;o.pt=r.pt;ch=true}if(r.rt&&o.rt!==r.rt){o.rt=r.rt;o.fb=r.fb||'';ch=true}if(r.rq&&o.rq!==r.rq){o.rq=r.rq;ch=true}
     if(ch){save();var ae=document.activeElement;if(S.tab==='trk'&&!(ae&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName)))render()}})});
 }
@@ -703,14 +713,14 @@ function xact(a,t,id,o,g){
   else if(a==='demooff'){DB.orders=DB.orders.filter(function(x){return !x.demo});DB.vend=DB.vend.filter(function(x){return !x.demo});DB.cour=DB.cour.filter(function(x){return !x.demo});S.msg='Données de démonstration supprimées. Vos vraies données sont intactes.';return 1}
   else if(a==='pubo'){if(o&&DB.set.db)pub(o);return 2;}
   else if(a==='mz'){var zv=t.getAttribute('data-v');if(zv==='+')S.mz=Math.min(4,(S.mz||1)*1.6);else if(zv==='-')S.mz=Math.max(.5,(S.mz||1)*.6);else{S.full=!S.full;S.mz=1}rr();return 2;}
-  else if(a==='cst'){var cd=decq('l');if(cd&&cd.api&&cd.dk){var cv2=t.getAttribute('data-v'),nw=Date.now(),bb={t:nw};if(cv2==='En cours'){bb.s=2;CS.s=2;bb.ev={};bb.ev['e'+nw]={t:nw,x:'Colis récupéré, le livreur est en route'}}else if(cv2==='Livré'){return 2}else{bb.bad=1;bb.r='Refusé';CS.s=-1;bb.ev={};bb.ev['e'+nw]={t:nw,x:'Livraison refusée par le client'}}fbp(cd.db,cd.tid,bb);CS.ok='Statut envoyé ✓';renderCourier();return 2;}}
+  else if(a==='cst'){var cd=decq('l');if(cd&&cd.api&&cd.dk&&cd.tid){var cv2=t.getAttribute('data-v');if(cv2==='En cours')cevt('pickup',cd);else if(cv2==='Refusé')cevt('refused',cd,'');renderCourier();return 2;}}
   else if(a==='dbtest'){var du=DB.set.db,api=trackApiUrl(DB.set.trackApi);if(!du||!api||!DB.set.trackOwnerKey){S.dbt='Renseigne la base, l’URL de la fonction et la clé propriétaire.';}else{S.dbt='Test en cours…';trackCall(api,{action:'ping',db:dbr(du),ownerKey:DB.set.trackOwnerKey}).then(function(){S.dbt='✓ Connexion à la fonction, à Firebase et clé propriétaire validée.'}).catch(function(x){S.dbt=x.message}).then(function(){render()})}}
   else if(a==='lfit'){LM.key='';LM.fitN++;rr();return 2;}
   else if(a==='lmaroc'){if(LM.map)LM.map.setView([31.8,-7.1],5);return 2;}
   else if(a==='nclose'){S.notif='';}
   else if(a==='trk'){S.trk=S.trk===id?'':id;if(S.trk)setTimeout(function(){var m=document.querySelector('#app .lslot'),c=m&&m.closest('.card');if(c)window.scrollTo({top:Math.max(0,c.getBoundingClientRect().top+window.scrollY-72),behavior:'smooth'})},120)}
   else if(a==='flat'){S.flat=!S.flat;}
-  else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.api&&dd.dk&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
+  else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.api&&dd.dk&&!CS.dn&&CS.s!==3&&CS.s!==-1&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
   else if(a==='pform'){S.pform=!S.pform;S.msg='';}
   else if(a==='pnew'){S.tab='cat';S.pform=true;S.pv=id;S.pview='';S.msg='';}
   else if(a==='pview'){S.pview=id;S.pi=0;S.del='';}
@@ -869,10 +879,10 @@ function boot(){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(x){}
 }
 /* ===== v5 : code de livraison, avis, demandes, motifs livreur, satisfaction vendeur ===== */
-var RS={n:0},LK='',PT=0,LT='',IP=null;
+var RS={n:0},LK='',PT=0,PC=0,LT='',IP=null;
 function dcode(d){return String((d&&d.dc)||'')}
 function dcs(o){if(!o.dc){o.dc=String(100000+crypto.getRandomValues(new Uint32Array(1))[0]%900000);save()}return o.dc}
-function sdel(dk,code,ok,ko){trackCall(dk.api,{action:'deliver',id:dk.tid,courierKey:dk.dk,code:String(code)}).then(ok).catch(function(e){ko(e.status||0)})}
+function sdel(dk,code,ok,ko){trackCall(dk.api,{action:'courierEvent',event:'delivered',eventId:AioEvents.eventId('delivered',dk.tid),id:dk.tid,courierKey:dk.dk,code:String(code)}).then(ok,function(e){ko(e.status||0)})}
 function toast(m){var x=document.createElement('div');x.className='tst';x.textContent=m;document.body.appendChild(x);setTimeout(function(){x.remove()},3200)}
 function conf(){var c=['#d4af37','#15803d','#1d4ed8','#dc2626','#f6dc85'];for(var i=0;i<26;i++){var p=document.createElement('i');p.className='cf';p.style.cssText='left:'+Math.random()*100+'vw;background:'+c[i%5]+';animation-delay:'+Math.random()*.6+'s';document.body.appendChild(p);setTimeout(function(q){q.remove()},3400,p)}}
 function snd(d,b,msg){if(d.api&&d.tid)fbp(d.db,d.tid,b);else if(d.w)window.open(wa(d.w,msg),'_blank')}
@@ -919,10 +929,10 @@ document.addEventListener('click',function(ev){
   else if(a==='crf'&&dk){CS.rf=1;CS.ac=0;renderCourier()}
   else if(a==='cok'&&dk){var c=($('cdin').value||'').trim();
     if(!dk.api||!dk.dk){CS.cm='Lien de suivi sécurisé requis pour valider le code.';renderCourier();return 2}
-    sdel(dk,c,function(){deliverOk(dk)},function(st){CS.cm=st===0?'Réseau indisponible, réessaie.':''+(st===429?'Trop d’essais : mission bloquée 30 min. Contacte le vendeur pour un nouveau code.':'Code incorrect, il reste '+attLeft(dk.tid)+' essai(s). Redemande-le au client.')+'';CS.sh=1;renderCourier();setTimeout(function(){CS.sh=0},500)})}
-  else if(a==='crs'&&dk&&dk.api&&dk.dk){CS.rf=0;var k=t.getAttribute('data-k'),b4={r:v.slice(0,40),t:n};
-    if(k==='r'){cfire('Refusé');b4.ev={};b4.ev['e'+(n+1)]={t:n+1,x:'Livraison échouée : '+v}}else{b4.ev={};b4.ev['e'+n]={t:n,x:'Livreur : '+v+', nouvelle tentative prévue'};CS.ok='Signalé ✓'}
-    fbp(dk.db,dk.tid,b4);renderCourier()}
+    sdel(dk,c,function(){deliverOk(dk)},function(st){if(st===0||st===404||st>=500){cdq(dk,c);return}CS.cm=''+(st===429?'Trop d’essais : mission bloquée 30 min. Contacte le vendeur pour un nouveau code.':'Code incorrect, il reste '+attLeft(dk.tid)+' essai(s). Redemande-le au client.')+'';CS.sh=1;renderCourier();setTimeout(function(){CS.sh=0},500)})}
+  else if(a==='crs'&&dk&&dk.api&&dk.dk){CS.rf=0;var k=t.getAttribute('data-k');
+    if(k==='r'){cevt('refused',dk,v)}else{var b4={r:v.slice(0,40),t:n};b4.ev={};b4.ev['e'+n]={t:n,x:'Livreur : '+v+', nouvelle tentative prévue'};CS.ok='Signalé ✓';fbp(dk.db,dk.tid,b4)}
+    renderCourier()}
   else if(a==='inst'&&IP){IP.prompt();t.parentNode.remove()}
 });
 /* vendeur */
@@ -986,7 +996,7 @@ function tick(){if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;var 
   DB.orders.forEach(function(o){var k=bad(o)?-1:stage(o);
     if(A.ca&&o.status==='Confirmé'&&!o.courier&&!bad(o)&&stage(o)<3&&DB.cour.length){var c=pickc(o);if(c){o.courier=c;ch=true}}
     if(o.ns==null&&(k===3||k===-1)){o.ns=stage(o);ch=true}
-    if(A.cp&&DB.set.db&&DB.set.trackApi&&DB.set.trackOwnerKey){if(o._ps===undefined){o._ps=k;ch=true;if(k>=1&&k<3)pub(o)}else if(o._ps!==k){o._ps=k;ch=true;if(o.tid||k>=1)pub(o)}}});
+    if(A.cp&&DB.set.db&&DB.set.trackApi&&DB.set.trackOwnerKey){if(o._ps===undefined){o._ps=k;ch=true;if(k>=1&&k<3)pub(o)}else if(o._ps!==k){var pk=o._ps;o._ps=k;ch=true;if(o.tid||k>=1)pub(o,k<pk||(pk===-1&&k>=0))}}});
   var due=DB.orders.filter(function(o){return o.status==='En attente'&&callDue(o)}).length;
   if(A.cn&&due&&Date.now()-LN>18e5&&'Notification' in window&&Notification.permission==='granted'){LN=Date.now();nt(due+(due>1?' appels':' appel')+' à passer','Ouvre Appels pour les traiter.')}
   if(A.cb&&!K&&DB.orders.length&&Date.now()-(DB.set.lastBackup||0)>6048e5){var b=document.createElement('button');b.setAttribute('data-act','bak');b.hidden=true;document.body.appendChild(b);b.click();b.remove();ch=false}
@@ -1947,7 +1957,7 @@ function openGo(g){var p=String(g||'').split('.'),ty=p[0],id=p.slice(1).join('.'
   if(!ok)toast('Fiche introuvable sur ce téléphone.');render()}
 function deliverOk(dk){CS.ac=0;CS.dn=1;CS.s=3;try{var l=JSON.parse(localStorage.getItem('cod_cr')||'[]');l.push({d:today(),m:+dk.m||0});localStorage.setItem('cod_cr',JSON.stringify(l.slice(-200)))}catch(x){}conf();toast('Livraison validée ✓');renderCourier()}
 function onScan(tx){tx=String(tx||'').trim();var dk=decq('l'),m=tx.match(/^AMK\|([\w-]+)\|(\d{6})$/),base=location.origin+location.pathname;
-  if(m){if(!dk||dk.tid!==m[1])return toast('Ce QR de livraison ne correspond pas à cette mission.');if(CS.dn||CS.s===3)return toast('Livraison déjà validée.');if(!dk.api||!dk.dk)return toast('Lien de suivi sécurisé requis.');return sdel(dk,m[2],function(){deliverOk(dk)},function(){toast('Code invalide.')})}
+  if(m){if(!dk||dk.tid!==m[1])return toast('Ce QR de livraison ne correspond pas à cette mission.');if(CS.dn||CS.s===3)return toast('Livraison déjà validée.');if(!dk.api||!dk.dk)return toast('Lien de suivi sécurisé requis.');return sdel(dk,m[2],function(){deliverOk(dk)},function(st){if(st===0||st===404||st>=500)return cdq(dk,m[2]);toast(st===429?'Trop d’essais : mission bloquée 30 min.':'Code invalide.')})}
   if(tx.indexOf(base)!==0)return toast('QR non reconnu : ce n’est pas un code de cette application.');
   var i=tx.indexOf('?'),q=new URLSearchParams(i<0?'':tx.slice(i+1).split('#')[0]),go=q.get('go'),l=dq(q.get('l')),tt=dq(q.get('t'));
   if(go){if(!DB)return toast('Ce code ouvre une fiche : utilise-le dans l’application du vendeur.');return openGo(go)}
@@ -2902,12 +2912,10 @@ function applyReply(r){var o=oid(r.i);if(!o)return 'miss';if(o.byClient||o.statu
   return 'done'}
 window.aioApplyReply=applyReply;
 function applyEvent(ev){var o=oid(ev.i);if(!o)return 'miss';var tg=ev.e==='pickup'?'En cours':ev.e==='delivered'?'Livré':ev.e==='refused'?'Refusé':'';if(!tg)return 'dup';
-  if(o.status!=='Confirmé')return 'miss';if(o.delivery===tg||o.delivery==='Livré')return 'dup';if(tg==='En cours'&&o.delivery==='Refusé')return 'dup';
+  if(o.status!=='Confirmé')return 'miss';if(o.delivery===tg||o.delivery==='Livré'||o.delivery==='Refusé')return 'dup';
   setDel(o,tg);S.notif=o.id;toast((tg==='Livré'?'✅ ':tg==='Refusé'?'❌ ':'🚚 ')+o.name+' : '+(tg==='En cours'?'colis récupéré par le livreur':tg==='Livré'?'livré':'refusé'));return 'done'}
 window.aioApplyEvent=applyEvent;
-var _tl3=tlink;
-tlink=function(o,k){var u=_tl3(o,k);if(k==='t'||!(window.cloudWebhookUrl&&DB.set.whk&&DB.set.whk===DB.set.ikey&&DB.set.ttok))return u;
-  try{var i=u.indexOf('?l='),d=decq2(u.slice(i+3));d.tu=cloudWebhookUrl('x').replace(/\/webhook\/.*$/,'/track');d.tk=DB.set.ttok;return u.slice(0,i)+'?l='+encq(d)}catch(x){return u}};
+/* 10.3.1 : plus de jeton tenant dans les liens livreur (tu/tk) ; les événements passent par la fonction Firebase « track » */
 function decq2(v){return JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(v)))))}
 document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-cev]');if(!t)return;ev.preventDefault();
   var d=decq('l');if(!d||!d.tu||!d.tk)return;var k=t.getAttribute('data-cev'),h=t.getAttribute('href');t.style.opacity='.6';
@@ -3253,3 +3261,27 @@ function cptFix(A){
   if(!bk||bk.tagName!=='BUTTON'||bk.getAttribute('data-act')!=='tab'||bk.getAttribute('data-v')!=='more')return;
   if(S.setBack&&(S.tab==='ver'||S.tab==='aide')){bk.removeAttribute('data-act');bk.removeAttribute('data-v');bk.setAttribute('data-sc','hub');bk.textContent='← Paramètres';[].forEach.call(document.getElementById('nav').children,function(n){n.classList.toggle('on',n.getAttribute('data-v')==='set')})}
 }catch(x){}}})();
+
+/* ===== 10.3.1 - Événements livreur : file persistante, erreurs visibles, nouvelles tentatives ===== */
+function tkStore(){try{var s=window.localStorage;s.setItem('aio_t','1');s.removeItem('aio_t');return s}catch(x){var m={};return{getItem:function(k){return k in m?m[k]:null},setItem:function(k,v){m[k]=String(v)}}}}
+var CEV=null,TKO=AioEvents.createOutbox({storage:tkStore(),send:function(it){return trackCall(it.api,{action:'courierEvent',id:it.tid,courierKey:it.courierKey,event:it.kind,eventId:it.eventId,code:it.code,reason:it.reason})},onChange:function(){cevSync()}});
+function cevt(kind,d,reason){try{TKO.enqueue({kind:kind,tid:d.tid,api:d.api,courierKey:d.dk,reason:reason||''})}catch(x){toast(x.message);return}TKO.flush()}
+function cdq(dk,code){try{TKO.enqueue({kind:'delivered',tid:dk.tid,api:dk.api,courierKey:dk.dk,code:code});CS.ac=0;CS.cm='';TKO.flush();toast('Pas de réseau : livraison enregistrée, envoi automatique.')}catch(x){CS.cm='Impossible d’enregistrer la livraison : '+x.message}renderCourier()}
+function cevSync(){var d=Q.get('l')&&decq('l');if(!d)return;var ch=0,first=!CEV;CEV=CEV||{};
+  TKO.list().forEach(function(i){if(i.tid!==d.tid||i.status!=='done'||CEV[i.key])return;CEV[i.key]=1;
+    if(i.kind==='delivered'){if(first){CS.dn=1;CS.s=3;CS.ac=0}else deliverOk(d);ch=1}
+    else if(i.kind==='refused'){CS.s=-1;ch=1}else if(CS.s!==3&&CS.s!==-1){CS.s=2;ch=1}});
+  var a=document.activeElement;if(ch&&!(a&&/INPUT|TEXTAREA/.test(a.tagName)))renderCourier();else cevBar()}
+function tkBox(txt,err,btns){var A=$('app'),el=$('tkst');if(!A)return;if(!txt){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='tkst';el.className='card';el.setAttribute('role','status');A.insertBefore(el,A.firstChild)}
+  el.style.borderColor=err?'#dc2626':'';el.textContent='';var p=document.createElement('p');p.style.margin='0';p.textContent=txt;el.appendChild(p);
+  if(btns&&btns.length){var w=document.createElement('div');w.className='btns';w.style.marginTop='8px';btns.forEach(function(b){var e=document.createElement('button');e.className='b sm';e.setAttribute('data-tk',b[0]);e.textContent=b[1];w.appendChild(e)});el.appendChild(w)}}
+function cevBar(){if(!Q.get('l'))return;var s=TKO.summary(),t=AioEvents.describe(s),txt=t.text||(TKS.err?'⚠ '+TKS.err:''),btns=[];
+  if(s.pending||s.failed)btns.push(['retry','Réessayer maintenant']);if(s.failed)btns.push(['dismiss','Fermer']);tkBox(txt,t.error||(!t.text&&!!TKS.err),btns)}
+function ownBar(){if(!DB||S.locked||Q.get('t')||Q.get('l')||Q.get('v'))return;var q=Object.keys(pubqGet()).length;
+  tkBox(TKS.err?'⚠ '+TKS.err+(q?' ('+q+' publication(s) en attente de nouvel essai)':''):'',true,TKS.err?[['own','Réessayer maintenant']]:[])}
+var _rc10=renderCourier;renderCourier=function(){_rc10();cevBar()};
+var _rd10=render;render=function(){_rd10();ownBar()};
+document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-tk]');if(!t)return;ev.preventDefault();var k=t.getAttribute('data-tk');
+  if(k==='retry')TKO.retryNow();else if(k==='dismiss'){TKO.list().forEach(function(i){if(i.status==='failed')TKO.dismiss(i.key)});cevBar()}else if(k==='own'){TKS.err='';pubqRun(true);ownBar()}});
+if(Q.get('l')){TKO.start(window);cevSync();cevBar()}
