@@ -33,7 +33,7 @@
 - Synchronisation cloud : les erreurs de `pullReplies` / `pullEvents` (lecture, application, accusé) remontent dans l'état de synchronisation ; les événements dont la commande n'est pas encore là restent en attente (comptés, jamais acquittés) ; lecture paginée pour qu'ils ne bloquent pas les suivants.
 
 ## Fichiers
-`functions/tracking.js` (nouveau), `functions/index.js`, `track-events.js` (nouveau), `app.js`, `cloud.js`, `index.html`, `sw.js` (cod-v81), `package.json` (nouveau, `npm test`), `functions/testing/fake-rtdb.js`, `functions/test/tracking.test.js`, `test/track-events.test.js`, `test/e2e-courier.test.js`, `supabase/legacy/*` (copie de référence), README, ce rapport. `database.rules.json` : inchangé (les nouveaux champs vivent dans `_privateTrackAuth`, écrit uniquement par la fonction).
+`functions/tracking.js` (nouveau), `functions/index.js`, `track-events.js` (nouveau), `app.js`, `cloud.js`, `index.html`, `sw.js` (cod-v82), `package.json` (nouveau, `npm test`), `functions/testing/fake-rtdb.js`, `functions/test/tracking.test.js`, `test/track-events.test.js`, `test/e2e-courier.test.js`, `supabase/legacy/*` (copie de référence), README, ce rapport. `database.rules.json` : inchangé (les nouveaux champs vivent dans `_privateTrackAuth`, écrit uniquement par la fonction).
 
 ## Tests (`npm test`)
 - 44 tests serveur (événements, jetons invalides/absents/croisés, accès client↔livreur, transitions, code de livraison, répétitions et concurrence, commande non publiée, publication en retard) sur une base Realtime simulée qui reproduit le cache froid du SDK.
