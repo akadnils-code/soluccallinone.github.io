@@ -1,3 +1,14 @@
+## Clôture 10.3.1 (corrections finales)
+- GPS : plus d'envoi de position après Livré/Refusé ; une erreur 409 de position n'affiche plus de bannière « Suivi » (corrigé).
+- Serveur : `courierUpdate` (ancien) refuse `bad:1` tant que la commande n'est pas en cours (cohérent avec `courierEvent`), test ajouté.
+- Synchro Supabase : `trackAuth` et `dc` (jetons/codes de livraison) ne sont plus envoyés dans `orders.data` ; clés sensibles des réglages (`trackOwnerKey`, `ttok`, `rtok`, `whk`, `db`, `ikey`, `ckey`, `tiles`) exclues de l'envoi et de l'import ; secrets locaux conservés lors d'une réception. Tests unitaires + contrôle statique de `cloud.js`.
+- Événements en attente : au-delà de 1000, l'avertissement « traitement partiel » est affiché.
+- `supabase/proposed/` : migrations SQL **proposées, non appliquées, non testées** (sauvegarde + nettoyage + déclencheurs + retour arrière).
+- Limite connue : un événement livreur déjà « terminé » dans la file locale n'est pas renvoyé si l'action est refaite sur la même mission (le serveur reste idempotent).
+- Non vérifié : déploiement Firebase réel/émulateur, appareils réels hors ligne, synchro Supabase de bout en bout, SQL proposé.
+- Tests : 86 (serveur, client, e2e Chromium), tous verts.
+
+
 
 # Version 10.3.1 : suivi automatique des livreurs (correctif prioritaire)
 

@@ -2,7 +2,8 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { classify, createOutbox, describe, drain } = require('../track-events.js');
+const AioEvents = require('../track-events.js');
+const { classify, createOutbox, describe, drain } = AioEvents;
 
 function memoryStorage(initial) {
   const data = Object.assign({}, initial || {});
@@ -332,4 +333,25 @@ test('file saturée : signalée par « truncated »', async () => {
   const r = await run();
   assert.equal(r.truncated, true);
   assert.equal(r.pending, 500);
+});
+
+test('secrets : dropSecrets / cleanSettings / keepSecrets', () => {
+  const o = { id: 'a', trackAuth: { client: 'x', courier: 'y' }, dc: '123456', name: 'n' };
+  assert.deepEqual(AioEvents.dropSecrets(o), { id: 'a', name: 'n' });
+  assert.ok(o.trackAuth, 'ne modifie pas l’original');
+  const set = { db: 1, ikey: 1, trackOwnerKey: 'k', ttok: 't', rtok: 'r', whk: 'w', cur: 'MAD' };
+  assert.deepEqual(AioEvents.cleanSettings(set), { cur: 'MAD' });
+  const m = AioEvents.keepSecrets({ id: 'a', name: 'cloud' }, o);
+  assert.equal(m.dc, '123456');
+  assert.deepEqual(m.trackAuth, o.trackAuth);
+  assert.equal(AioEvents.keepSecrets({ dc: 'z' }, o).dc, 'z', 'ne remplace pas une valeur déjà présente');
+});
+
+test('cloud.js utilise les helpers de secrets aux points push/pull/prepare', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'cloud.js'), 'utf8');
+  assert.ok(/dropSecrets\(r\)/.test(src), 'pushAll');
+  assert.ok(/dropSecrets\(loc\)/.test(src), 'hash local');
+  assert.ok(/dropSecrets\(cloud\)/.test(src), 'hash cloud');
+  assert.ok(/keepSecrets\(m, loc\)/.test(src), 'restore');
+  assert.ok(/cleanSettings\(s\)/.test(src) && /map\(AioEvents\.dropSecrets\)/.test(src), 'prepare');
 });

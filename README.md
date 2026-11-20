@@ -51,6 +51,9 @@ Un seul mécanisme pour les événements du livreur : la fonction Firebase `trac
 - L'ancien circuit Supabase (`order_events`) n'est plus alimenté par les nouveaux liens ; il reste lu pour les liens déjà distribués. Voir `supabase/legacy/README.md`.
 - Tests : `npm test` (serveur, file livreur, et bout en bout si Playwright/Chromium est installé).
 
+### Secrets et synchronisation
+Les jetons de suivi (`trackAuth`), codes de livraison (`dc`) et clés sensibles des réglages restent sur l'appareil du vendeur : ils ne sont plus envoyés à Supabase. Voir `supabase/proposed/` (SQL proposé, non appliqué).
+
 ## Changements v10.2.2
 - Textes d'aide, messages d'erreur et mode d'emploi alignés sur le nouveau menu Paramètres (plus de renvoi vers « Compte → Sécurité », « Compte → Mon profil », « Compte → Connexions »).
 - Cache du service worker `cod-v71`.

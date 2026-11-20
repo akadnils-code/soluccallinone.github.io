@@ -487,3 +487,9 @@ test('mêmes résultats avec un cache de base déjà chaud', async () => {
   assert.equal(db.read('track/' + ID).s, 3);
   assert.equal(events(db).length, 2, 'un événement Récupéré et un événement Livré, sans doublon');
 });
+
+test('courierUpdate : refus (bad:1) impossible tant que la commande n’est pas en cours', async () => {
+  const { call } = setup();
+  await publish(call, { s: 0 });
+  await rejectsWith(call({ action: 'courierUpdate', id: ID, courierKey: COURIER_KEY, patch: { bad: 1 } }), 409);
+});

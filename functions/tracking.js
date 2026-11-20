@@ -302,7 +302,8 @@ function createTracking(deps) {
     const done = await transact(track, (current) => {
       const effective = Object.assign({}, patch);
       if (isCourier) {
-        if (current.s === 3 || current.bad === 1 || (effective.s === 2 && current.s !== 1 && current.s !== 2)) {
+        if (current.s === 3 || current.bad === 1 || (effective.s === 2 && current.s !== 1 && current.s !== 2) ||
+            (effective.bad === 1 && !(current.s >= 1))) {
           return {}; // pas de write : transaction annulée -> 409
         }
         if (effective.s === 2 && current.s === 2) {

@@ -180,5 +180,22 @@
     return res;
   }
 
-  return { classify: classify, createOutbox: createOutbox, describe: describe, drain: drain, eventId: eventId, KINDS: KINDS, LABEL: LABEL };
+  /* Secrets de suivi : ne quittent jamais l'appareil du vendeur vers Supabase (synchronisation, import). */
+  var ORDER_SECRETS = ['trackAuth', 'dc'];
+  var SETTING_SECRETS = ['db', 'ikey', 'ckey', 'tiles', 'trackOwnerKey', 'ttok', 'rtok', 'whk'];
+  function omit(o, keys) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return o;
+    var r = {}; for (var k in o) if (keys.indexOf(k) < 0) r[k] = o[k];
+    return r;
+  }
+  function dropSecrets(order) { return omit(order, ORDER_SECRETS); }
+  function cleanSettings(set) { return omit(set, SETTING_SECRETS); }
+  // Réinjecte dans la commande fusionnée les secrets présents en local (le cloud n'en contient plus).
+  function keepSecrets(merged, local) {
+    if (!merged || !local || typeof merged !== 'object' || typeof local !== 'object') return merged;
+    ORDER_SECRETS.forEach(function (k) { if (local[k] !== undefined && merged[k] === undefined) merged[k] = local[k]; });
+    return merged;
+  }
+
+  return { dropSecrets: dropSecrets, cleanSettings: cleanSettings, keepSecrets: keepSecrets, ORDER_SECRETS: ORDER_SECRETS, SETTING_SECRETS: SETTING_SECRETS, classify: classify, createOutbox: createOutbox, describe: describe, drain: drain, eventId: eventId, KINDS: KINDS, LABEL: LABEL };
 });

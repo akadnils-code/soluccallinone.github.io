@@ -523,7 +523,7 @@ function trackPayload(id,b,regress){var t=Date.now();
 var TKS={err:'',at:0};
 function pubqGet(){try{return JSON.parse(localStorage.getItem('aio_pubq')||'{}')||{}}catch(x){return{}}}
 function pubqSet(q){try{localStorage.setItem('aio_pubq',JSON.stringify(q))}catch(x){TKS.err='Mémoire du téléphone pleine : le suivi risque de ne pas être conservé.'}}
-function tkErr(x,id,owner,regress){var c=AioEvents.classify(x),prev=TKS.err;TKS.err='Suivi : '+(c.retry?c.message:(x&&x.message)||c.message);TKS.at=Date.now();if(window.console)console.error('Suivi Firebase :',x&&x.message);
+function tkErr(x,id,owner,regress){var c=AioEvents.classify(x),prev=TKS.err;if(!owner&&!c.retry&&(c.status===409||(x&&x.status===409))){if(window.console)console.warn('Suivi (ignoré, état final) :',x&&x.message);return}TKS.err='Suivi : '+(c.retry?c.message:(x&&x.message)||c.message);TKS.at=Date.now();if(window.console)console.error('Suivi Firebase :',x&&x.message);
   if(owner&&c.retry){var q=pubqGet(),e=q[id]||{tries:0};e.tries++;e.regress=!!(e.regress||regress);e.next=Date.now()+Math.min(300000,2000*Math.pow(2,e.tries));q[id]=e;pubqSet(q)}
   if(prev!==TKS.err&&!Q.get('t')&&!Q.get('l')&&window.toast)toast(TKS.err)}
 /* publications propriétaire qui ont échoué : rejouées avec délai croissant tant que la commande existe */
@@ -720,7 +720,7 @@ function xact(a,t,id,o,g){
   else if(a==='nclose'){S.notif='';}
   else if(a==='trk'){S.trk=S.trk===id?'':id;if(S.trk)setTimeout(function(){var m=document.querySelector('#app .lslot'),c=m&&m.closest('.card');if(c)window.scrollTo({top:Math.max(0,c.getBoundingClientRect().top+window.scrollY-72),behavior:'smooth'})},120)}
   else if(a==='flat'){S.flat=!S.flat;}
-  else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.api&&dd.dk&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
+  else if(a==='cgps'){CS.t=0;if(!navigator.geolocation){CS.err='GPS indisponible sur cet appareil.';renderCourier();return 2;}if(CS.w==null)CS.w=navigator.geolocation.watchPosition(function(p){CS.gps=[p.coords.latitude,p.coords.longitude];CS.acc=Math.round(p.coords.accuracy||0);CS.err='';var dd=decq('l');if(dd&&dd.api&&dd.dk&&!CS.dn&&CS.s!==3&&CS.s!==-1&&Date.now()-(CS.pp||0)>5000){CS.pp=Date.now();fbp(dd.db,dd.tid,{pos:CS.gps,pt:Date.now()})}if(Date.now()-CS.t>6000){CS.t=Date.now();renderCourier()}},function(){CS.err='GPS refusé : autorise la localisation dans ton navigateur.';renderCourier()},{enableHighAccuracy:true,maximumAge:3000});CS.err='Recherche de ta position…';renderCourier();return 2;}
   else if(a==='pform'){S.pform=!S.pform;S.msg='';}
   else if(a==='pnew'){S.tab='cat';S.pform=true;S.pv=id;S.pview='';S.msg='';}
   else if(a==='pview'){S.pview=id;S.pi=0;S.del='';}

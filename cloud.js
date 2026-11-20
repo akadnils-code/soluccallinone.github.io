@@ -105,8 +105,8 @@
     }
     var d = strip(JSON.parse(JSON.stringify(db)));
     var s = d.set || {};
-    ['db', 'ikey', 'ckey', 'tiles'].forEach(function (k) { delete s[k]; });
-    d.set = s;
+    d.set = AioEvents.cleanSettings(s);
+    d.orders = (d.orders || []).map(AioEvents.dropSecrets);
     return { data: d, imgs: imgs };
   }
 
@@ -184,7 +184,7 @@
       var T = TBL[ti], cur = {}, byId = {};
       (DB[T.k] || []).forEach(function (r) {
         if (!r || r.id == null) return;
-        var id = String(r.id), s = stripD(r), hh = hash(canon(s));
+        var id = String(r.id), s = stripD(T.k === 'orders' ? AioEvents.dropSecrets(r) : r), hh = hash(canon(s));
         cur[id] = hh;
         if (st.hashes[T.k][id] !== hh) byId[id] = Object.assign({ tenant_id: ten, id: id }, T.row(r), { data: s, deleted_at: null });
       });
@@ -234,7 +234,7 @@
         var rows = await api('/rest/v1/' + T.t + '?select=id,data,updated_at,deleted_at&tenant_id=eq.' + ten + (since ? '&updated_at=gte.' + encodeURIComponent(since) : '') + '&order=updated_at.asc,id.asc&limit=500&offset=' + offset);
         if (!rows || !rows.length) break;
         rows.forEach(function (row) {
-          var id = String(row.id), loc = idx[id], lh = loc ? hash(canon(stripD(loc))) : null, synced = st.hashes[T.k][id];
+          var id = String(row.id), loc = idx[id], lh = loc ? hash(canon(stripD(T.k === 'orders' ? AioEvents.dropSecrets(loc) : loc))) : null, synced = st.hashes[T.k][id];
           if (row.deleted_at) {
             if (loc && lh === synced) { drop[id] = 1; delete idx[id]; delete st.hashes[T.k][id]; down++; }
             return;
@@ -242,11 +242,12 @@
           var cloud = row.data;
           if (!cloud || typeof cloud !== 'object' || Array.isArray(cloud)) return;
           if (cloud.id == null) cloud.id = row.id;
-          var ch = hash(canon(cloud));
+          var ch = hash(canon(T.k === 'orders' ? AioEvents.dropSecrets(cloud) : cloud));
           if (loc) {
             if (lh !== synced) return;               // modification locale en attente : elle gagne
             if (ch === lh) { st.hashes[T.k][id] = ch; return; }
             var m = restore(cloud, loc);
+            if (T.k === 'orders') m = AioEvents.keepSecrets(m, loc);
             list[list.indexOf(loc)] = m; idx[id] = m;
           } else {
             list.push(cloud); idx[id] = cloud;
@@ -296,6 +297,7 @@
       rows = rows || [];
       all = all.concat(rows);
       if (rows.length < PAGE) break;
+      if (p === MAXP - 1) all.truncated = true;
     }
     return all;
   }
@@ -304,11 +306,13 @@
     if (!s || !ct || typeof window.aioApplyReply !== 'function' || !s.ikey || s.whk !== s.ikey) return { n: 0, pending: 0, errors: [] };
     var t = await sha24(s.ikey + ':reply');
     if (s.rtok !== t) { s.rtok = t; if (typeof save === 'function') save(); }
+    var tr = false;
     var r = await AioEvents.drain({
-      fetchPending: function () { return fetchPending('order_replies', 'id,order_id,status,address,lat,lng', ct.id, 'created_at.asc'); },
+      fetchPending: function () { return fetchPending('order_replies', 'id,order_id,status,address,lat,lng', ct.id, 'created_at.asc').then(function (rows) { if (rows.truncated) tr = true; return rows; }); },
       apply: function (x) { return window.aioApplyReply({ i: x.order_id, s: x.status, a: x.address, la: x.lat, ln: x.lng }); },
       ack: function (x) { return ackRow('order_replies', x.id); }
     });
+    if (tr) r.errors.push({ id: null, stage: 'fetch', message: 'plus de 1000 éléments en attente, traitement partiel' });
     return { n: r.applied, pending: r.pending, errors: r.errors };
   }
 
@@ -318,11 +322,13 @@
   async function pullEvents() {
     var s = typeof DB !== 'undefined' && DB && DB.set, ct = curTenant();
     if (!s || !ct || typeof window.aioApplyEvent !== 'function' || !s.ikey || s.whk !== s.ikey) return { n: 0, pending: 0, errors: [] };
+    var tr = false;
     var r = await AioEvents.drain({
-      fetchPending: function () { return fetchPending('order_events', 'id,order_id,kind,created_at', ct.id, 'created_at.asc'); },
+      fetchPending: function () { return fetchPending('order_events', 'id,order_id,kind,created_at', ct.id, 'created_at.asc').then(function (rows) { if (rows.truncated) tr = true; return rows; }); },
       apply: function (x) { return window.aioApplyEvent({ i: x.order_id, e: x.kind }); },
       ack: function (x) { return ackRow('order_events', x.id); }
     });
+    if (tr) r.errors.push({ id: null, stage: 'fetch', message: 'plus de 1000 éléments en attente, traitement partiel' });
     return { n: r.applied, pending: r.pending, errors: r.errors };
   }
 
