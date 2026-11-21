@@ -54,6 +54,12 @@ Un seul mécanisme pour les événements du livreur : la fonction Firebase `trac
 ### Secrets et synchronisation
 Les jetons de suivi (`trackAuth`), codes de livraison (`dc`) et clés sensibles des réglages restent sur l'appareil du vendeur : ils ne sont plus envoyés à Supabase. Côté base, des déclencheurs les filtrent aussi (voir `supabase/proposed/`, appliqué le 2026-11-20).
 
+### Isolation des données et suspension (appliqué le 2026-11-21)
+- Toutes les tables Supabase ont le RLS actif et filtrent par entreprise (`has_role(tenant_id, …)`). Un client ne peut ni lire, ni écrire chez un autre, ni modifier son `plan` ou son `status` (seul le nom est modifiable).
+- Suspendre un client (`update public.tenants set status = 'suspended' …`, voir `supabase-admin.sql`) coupe réellement son accès aux données côté base ; les fonctions Edge `webhook`, `neworder`, `ingest` et `reply` refusent aussi ses commandes entrantes. Ses données restent sur son téléphone.
+- Le rôle anonyme n’a plus aucun droit sur les tables ni les fonctions.
+- Détails, tests et limites : `supabase/applied/README.md`. Contrôles à relancer avant une vente : `supabase-verification.sql`.
+
 ## Changements v10.2.2
 - Textes d'aide, messages d'erreur et mode d'emploi alignés sur le nouveau menu Paramètres (plus de renvoi vers « Compte → Sécurité », « Compte → Mon profil », « Compte → Connexions »).
 - Cache du service worker `cod-v71`.
@@ -109,7 +115,7 @@ Les jetons de suivi (`trackAuth`), codes de livraison (`dc`) et clés sensibles 
 ## Changements v8.6.1
 - Habillage noir / orange inspiré de « Max it » (Orange Maroc) ; la photo de profil, si présente, colore l’en-tête, le fond et le menu.
 - Rôles (cloud.js) : le rôle du compte est connu dès le démarrage, même hors ligne. Un livreur ne voit que Livraison, un vendeur que Commandes, sans Compte ni Finances.
-- Limite : cette garde est dans l’interface. L’isolation réelle des données demande les règles RLS Supabase (voir README).
+- Limite (à cette version) : la garde était dans l’interface seulement. Depuis, l’isolation est assurée par les règles RLS Supabase : voir « Isolation des données et suspension » plus haut.
 
 ## Changements v8.6.0
 - Affichage plus compact (textes, cartes, boutons, menu du bas, carte) et compatible iPhone / Android / tous navigateurs.
