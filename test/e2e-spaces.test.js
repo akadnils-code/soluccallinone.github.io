@@ -203,17 +203,3 @@ test('confirmation client : après « Je confirme », bouton « Suivre ma comman
     assert.deepEqual(errors, []);
   });
 });
-
-test('client : après « Je confirme », un bouton « Suivre ma commande » mène au suivi court', async (t) => {
-  await withPage(t, {}, async ({ page, base, errors }) => {
-    await page.goto(base + '/index.html?r=KKKKKKKKKK');
-    await page.waitForSelector('[data-act=spa]');
-    await page.evaluate(() => { window.__cf = { tc: 'Ab3xY9kLmN', w: '212600000000', pr: 'Robe' }; cfDone(true); });
-    assert.equal(await page.locator('a:has-text("Suivre ma commande")').getAttribute('href'), '?r=Ab3xY9kLmN');
-    await page.evaluate(() => { window.__cf = { tc: 'bad link', w: '212600000000' }; cfDone(true); });
-    assert.equal(await page.locator('a:has-text("Suivre ma commande")').count(), 0, 'code invalide : pas de bouton');
-    await page.evaluate(() => { window.__cf = { tc: 'Ab3xY9kLmN' }; cfDone(false); });
-    assert.equal(await page.locator('a:has-text("Suivre ma commande")').count(), 0, 'commande annulée : pas de bouton');
-    assert.deepEqual(errors, []);
-  });
-});
