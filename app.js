@@ -584,7 +584,7 @@ document.addEventListener('click',function(ev){
 });
 function spLoad(){
   fetch(SPF+SP.code,{cache:'no-store'}).then(function(r){return r.json().then(function(j){return{r:r,j:j}},function(){return{r:r,j:null}})}).then(function(z){
-    if(z.r.ok&&z.j&&Array.isArray(z.j.o)){SP.o=z.j.o;SP.n=z.j.n||SP.n;SP.err='';SP.ts=Date.now()}
+    if(z.r.ok&&z.j&&Array.isArray(z.j.o)){SP.o=z.j.o;SP.n=z.j.n||SP.n;if(SP.hold)SP.hold=0;else SP.err='';SP.ts=Date.now()}
     else SP.err=z.r.status===410?'Ce lien a expiré. Demande un nouveau lien à ta boutique.':z.r.status===403?'Ce lien n’est plus disponible.':'Impossible de charger tes commandes. Réessaie dans un instant.';
     spRender()
   }).catch(function(){SP.err='Pas de connexion. Les commandes affichées peuvent ne pas être à jour.';spRender()})
@@ -629,7 +629,7 @@ function spClick(ev){
     SP.busy='';
     if(z.r.ok){SP.err='';SP.o.forEach(function(o){if(o.id===id)o.d=z.j.d})}
     else SP.err=z.r.status===409?'Cette commande est déjà clôturée.':z.r.status===404?'Cette commande ne t’est plus attribuée.':'Enregistrement impossible. Réessaie dans un instant.';
-    spRender();if(!z.r.ok)spLoad()
+    spRender();if(!z.r.ok){SP.hold=1;spLoad()}
   }).catch(function(){SP.busy='';SP.err='Pas de connexion : ton action n’a pas été enregistrée. Réessaie.';spRender()})
 }
 
