@@ -3,6 +3,6 @@
   "private": true,
   "description": "Application statique (PWA). Ce package.json ne sert qu'à lancer les tests : aucune dépendance à installer pour le site.",
   "scripts": {
-    "test": "node --test functions/test/*.test.js test/*.test.js"
+    "test": "node --test functions/test/*.test.js test/*.test.js supabase/functions/*/*.test.mjs"
   }
 }

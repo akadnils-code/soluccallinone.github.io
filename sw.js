@@ -1,7 +1,7 @@
-var V='cod-v83',T='cod-tiles-v3',F=['./','index.html','styles.css','ar.js','track-events.js','app.js','cloud.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-512-maskable.png','privacy.html','vendor/leaflet/leaflet.js','vendor/leaflet/leaflet.css'];
+var V='cod-v85',T='cod-tiles-v3',F=['./','index.html','styles.css','ar.js','track-events.js','app.js','cloud.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-512-maskable.png','privacy.html','vendor/leaflet/leaflet.js','vendor/leaflet/leaflet.css'];
 var API=/firebaseio\.com|router\.project-osrm\.org|nominatim\.openstreetmap\.org|photon\.komoot\.io/;
 var TILE=/basemaps\.cartocdn\.com|tile\.openstreetmap\.org|cdnjs\.cloudflare\.com/;
-var LINK=/[?&](t|l|v|go|card|cf|rep)=/;
+var LINK=/[?&](t|l|v|go|card|cf|rep|r)=/;
 self.addEventListener('install',function(e){e.waitUntil(caches.open(V).then(function(c){return Promise.all(F.map(function(u){return c.add(u).catch(function(){})}))}).then(function(){return self.skipWaiting()}))});
 self.addEventListener('activate',function(e){e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==V&&x!==T}).map(function(x){return caches.delete(x)}))}).then(function(){return self.clients.claim()}))});
 function trim(c,n){c.keys().then(function(k){if(k.length>n)c.delete(k[0]).then(function(){trim(c,n)})})}

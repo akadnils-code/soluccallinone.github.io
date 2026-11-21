@@ -1,4 +1,4 @@
-# All In One — Amk Logistique (v10.3.2)
+# All In One — Amk Logistique (v10.5.0)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
@@ -39,6 +39,25 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
 - **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
 - **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Changements v10.5.0 : espaces livreur et vendeur, suivi en direct
+
+- **Espace livreur** : un lien personnel court (`?r=CODE`, sans compte). Le livreur voit uniquement les commandes confirmées qui lui sont attribuées (retrait chez le vendeur, client, itinéraire, à encaisser) et touche **Récupéré / Livré / Refusé**. L'action est enregistrée par la fonction Edge `space` (vérifie que la commande est bien à lui, pas de retour en arrière après Livré/Refusé) ; la commission de livraison est figée comme dans l'appli.
+- **Espace vendeur** : lien personnel en **lecture seule** (ses commandes, leur étape, le livreur, compteurs).
+- **Propriétaire** : dans Livreurs et dans la fiche vendeur, bouton « Lien de son espace » (copie le lien et ouvre WhatsApp) et « Nouveau lien » (l'ancien cesse de fonctionner immédiatement). Le propriétaire garde toutes les fonctions.
+- **Client** : le suivi court est **en direct** (la fonction `link` relit l'étape et le livreur dans la commande, la page se rafraîchit toute seule toutes les 30 s). Après « Je confirme », la page de confirmation propose « Suivre ma commande » : un seul lien suffit au client.
+- Nécessite le compte cloud actif (owner/admin/agent). Sans cela, le bouton le signale ; les liens de commande gardent leur ancien format.
+- Base : migration `supabase/applied/07_spaces.sql` ; fonctions `space` (nouvelle) et `link` (v2) déjà déployées en production.
+- Limites : jeton = secret du lien (quiconque l'a voit ces commandes, d'où « Nouveau lien ») ; expiration 180 jours renouvelée à chaque modification ; non testé sur de vrais téléphones ; la fonction `space` n'a pu être appelée en réel depuis cet environnement (testée avec une base simulée).
+
+## Changements v10.4.0 : liens courts
+- Les liens envoyés aux clients (suivi, confirmation) et aux livreurs deviennent `https://…github.io/?r=Ab3xY9kLmN` (une cinquantaine de caractères) au lieu de plusieurs centaines. Les anciens longs liens déjà envoyés continuent de fonctionner.
+- Fonctionnement : l'application enregistre le contenu du lien dans la table `short_links` (Supabase, `supabase/applied/06_short_links.sql`) ; la fonction Edge `link` (`supabase/functions/link/`) le rend à la page ouverte. Le contenu est mis à jour tout seul quand la commande change (même lien, nouvelle étape). Valide 180 jours après la dernière mise à jour.
+- Condition : compte cloud connecté, entreprise active, rôle propriétaire, administrateur ou agent. Sinon l'application garde l'ancien long lien : rien ne casse hors connexion.
+- L'enregistrement part en arrière-plan et se rejoue tout seul tant qu'il n'a pas réussi : si le vendeur envoie le lien au moment exact où il n'a plus de réseau, le client peut voir « Lien introuvable » ; renvoyer le lien règle le cas.
+- À savoir : le contenu des liens (nom, adresse et téléphone du client pour le lien livreur, jetons de suivi) est maintenant aussi stocké dans Supabase, protégé par RLS (écriture par entreprise active, lecture publique uniquement par code de 10 caractères tiré au hasard). C'est le prix des liens courts. Révocation : `update public.short_links set revoked = true where order_id = '…'`.
+- Tests : `test/e2e-short-link.test.js` (11 cas, Chromium) et `supabase/functions/link/link.test.mjs` (13 cas).
+- Cache du service worker `cod-v84`.
 
 ## Changements v10.3.2
 - Entreprise suspendue : l’erreur brute du serveur est remplacée par un message clair (synchronisation arrêtée, données conservées sur le téléphone). Aucune autre modification du code de l’application.

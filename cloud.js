@@ -352,6 +352,7 @@
       }
       st.last = { at: Date.now(), up: up, down: down, err: warns.join(' · '), waiting: waiting };
       lsSet(YK, st);
+      shFlush();
       if (down) {
         if (typeof save === 'function') save();
         if (manual || !typing()) redraw();
@@ -373,6 +374,71 @@
     }
   }
   window.cloudSync = function () { return sync(true); };
+
+  /* ---------- liens courts (10.4.0) ----------
+     Un lien client ou livreur devient ...?r=CODE. La charge utile (la même que celle des anciens longs liens) est
+     enregistrée dans la table short_links ; la fonction Edge « link » la rend à la page ouverte par le client ou le livreur.
+     Si l'enregistrement est impossible (pas de compte cloud, entreprise suspendue, rôle insuffisant), l'application garde le long lien.
+     L'enregistrement part en arrière-plan et se rejoue tout seul (file aio_shq) tant qu'il n'a pas réussi. */
+  var SQ = 'aio_shq', SH = 'aio_shh', B62 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', shBusy = false, shBad = {};
+  var shSeen = lsGet(SH) || {}, shQ = lsGet(SQ) || {}; // gardés en mémoire : tlink() est appelée à chaque affichage de la liste
+  function shReady() {
+    var c = curTenant();
+    return !!(sess() && c && c.status === 'active' && (c.role === 'owner' || c.role === 'admin' || c.role === 'agent'));
+  }
+  function shCode() {
+    var s = '', a = new Uint8Array(32), i;
+    while (s.length < 10) {
+      crypto.getRandomValues(a);
+      for (i = 0; i < a.length && s.length < 10; i++) if (a[i] < 248) s += B62.charAt(a[i] % 62); // 248 = 4 x 62 : pas de biais
+    }
+    return s;
+  }
+  async function shFlush() {
+    if (shBusy || !sess()) return;
+    shBusy = true;
+    try {
+      var codes = Object.keys(shQ);
+      for (var i = 0; i < codes.length; i++) {
+        var c = codes[i], it = shQ[c];
+        if (!it) continue;
+        try {
+          await api('/rest/v1/short_links?on_conflict=code', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+            body: JSON.stringify([{ code: c, tenant_id: it.t, kind: it.k, order_id: it.o, payload: it.p }]) });
+          if (Object.keys(shSeen).length > 3000) shSeen = {};
+          shSeen[c] = it.h; lsSet(SH, shSeen);
+          if (shQ[c] && shQ[c].h === it.h) { delete shQ[c]; lsSet(SQ, shQ); }
+        } catch (x) {
+          // Refus définitif (droits, contenu invalide) : on n'insiste pas avec la même charge utile. Réseau, 5xx, 401, 429 : nouvel essai plus tard.
+          if (x && x.status && x.status < 500 && x.status !== 401 && x.status !== 408 && x.status !== 429) {
+            shBad[c] = it.h;
+            if (shQ[c] && shQ[c].h === it.h) { delete shQ[c]; lsSet(SQ, shQ); }
+          }
+        }
+      }
+    } finally { shBusy = false; }
+  }
+  window.cloudShort = {
+    ready: shReady,
+    code: shCode,
+    put: function (code, kind, orderId, payload) {
+      try {
+        var h = hash(canon(payload));
+        if (shSeen[code] === h || shBad[code] === h) return;
+        var c = curTenant();
+        if (!c) return;
+        if (!shQ[code] || shQ[code].h !== h) { shQ[code] = { t: c.id, k: kind, o: String(orderId), p: payload, h: h }; lsSet(SQ, shQ); }
+        shFlush();
+      } catch (x) {}
+    },
+    flush: shFlush,
+    // Supprime un lien (espace livreur / vendeur régénéré) : l'ancien code cesse de fonctionner tout de suite.
+    drop: async function (code) {
+      delete shQ[code]; lsSet(SQ, shQ); delete shSeen[code]; delete shBad[code]; lsSet(SH, shSeen);
+      await api('/rest/v1/short_links?code=eq.' + encodeURIComponent(code), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    }
+  };
+  window.addEventListener('online', function () { shFlush(); });
 
   /* ---------- bouton « Synchroniser » dans l'en-tête ----------
      Même synchronisation que Réglages → Connexions → Compte cloud, accessible en un geste.
