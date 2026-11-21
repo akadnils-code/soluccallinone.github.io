@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.5.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.5.1',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -598,6 +598,7 @@ function spaceBoot(code,k,n){
 }
 function spLab(o){if(o.st!=='Confirmé')return o.st||'—';return o.d==='Livré'?'Livrée':o.d==='En cours'?'En route':o.d==='Refusé'?'Refusée':'Confirmée'}
 function spRender(){
+  if(!SP.ts&&SP.err){solo('<h1>'+(SP.k==='vsp'?'Mon espace':'Mes livraisons')+'</h1><div class="msg err">'+e(SP.err)+'</div><div class="card"><p class="mut">Tes commandes n’ont pas pu être chargées. Ce n’est pas que tu n’en as pas : vérifie ta connexion puis réessaie.</p><button class="b pri full" data-act="spr">Réessayer</button></div>');return}
   var gm=function(q){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},O=SP.o,h='';
   var head='<h1>'+(SP.k==='dsp'?'Mes livraisons':'Mon espace')+'</h1><div class="mut" style="margin:-6px 0 10px">'+e(SP.n)+' · mis à jour '+new Date(SP.ts||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' <button class="b sm" data-act="spr">Actualiser</button></div>'+(SP.err?'<div class="msg err">'+e(SP.err)+'</div>':'');
   if(SP.k==='dsp'){
