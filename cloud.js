@@ -431,7 +431,12 @@
         shFlush();
       } catch (x) {}
     },
-    flush: shFlush
+    flush: shFlush,
+    // Supprime un lien (espace livreur / vendeur régénéré) : l'ancien code cesse de fonctionner tout de suite.
+    drop: async function (code) {
+      delete shQ[code]; lsSet(SQ, shQ); delete shSeen[code]; delete shBad[code]; lsSet(SH, shSeen);
+      await api('/rest/v1/short_links?code=eq.' + encodeURIComponent(code), { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    }
   };
   window.addEventListener('online', function () { shFlush(); });
 

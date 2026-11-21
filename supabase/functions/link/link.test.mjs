@@ -11,6 +11,7 @@ function mock(cfg) {
     calls.push({ url, headers: opt.headers });
     if (url.includes('/short_links?')) return cfg.dbError ? J({}, 500) : J(cfg.rows || []);
     if (url.includes('/tenants?')) return J([{ status: cfg.status || 'active' }]);
+    if (url.includes('/orders?')) return J(cfg.order === undefined ? [] : cfg.order);
     throw new Error('appel inattendu ' + url);
   };
 }
@@ -46,5 +47,16 @@ mock({}); r = await handler(new Request('https://x/functions/v1/link/' + CODE, {
 check('12 OPTIONS -> 204 avec CORS', r.status === 204 && r.headers.get('access-control-allow-origin') === '*');
 mock({ rows: [row()] }); await get(CODE);
 check('13 la clé service n’est jamais renvoyée au client', !JSON.stringify(await (await get(CODE)).json()).includes('srk'));
+mock({ rows: [row({ order_id: 'o1', payload: { p: 'Robe', s: 0, c: '' } })], order: [{ data: { status: 'Confirmé', delivery: 'En cours', courier: 'Karim' }, deleted_at: null }] }); r = await get(CODE); j = await r.json();
+check('14 suivi client en direct : étape 2 et livreur relus dans la commande', j.d.s === 2 && j.d.c === 'Karim' && j.d.bad === 0 && j.d.p === 'Robe', JSON.stringify(j));
+check('15 la requête commande est limitée à l’entreprise du lien', calls.some((c) => c.url.includes('/orders?') && c.url.includes('tenant_id=eq.T1') && c.url.includes('id=eq.o1')));
+mock({ rows: [row({ order_id: 'o1' })], order: [{ data: { status: 'Confirmé', delivery: 'Refusé' }, deleted_at: null }] }); r = await get(CODE); j = await r.json();
+check('16 refus : bad = 1', j.d.bad === 1);
+mock({ rows: [row({ order_id: 'o1', payload: { p: 'Robe', s: 1 } })], order: [{ data: { status: 'En attente' }, deleted_at: '2026-01-01' }] }); r = await get(CODE); j = await r.json();
+check('17 commande supprimée : charge utile d’origine conservée', j.d.s === 1);
+mock({ rows: [row({ kind: 'cf', order_id: 'o1' })] }); r = await get(CODE);
+check('18 lien de confirmation : pas de lecture de commande', !calls.some((c) => c.url.includes('/orders?')));
+mock({ rows: [row({ order_id: 'o1' })], order: [] }); r = await get(CODE);
+check('19 commande introuvable : réponse normale', r.status === 200);
 console.log(fails ? '\n' + fails + ' ECHEC(S)' : '\nTous les tests passent');
 process.exit(fails ? 1 : 0);

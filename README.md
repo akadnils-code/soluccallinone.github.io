@@ -1,4 +1,4 @@
-# All In One — Amk Logistique (v10.4.0)
+# All In One — Amk Logistique (v10.5.0)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
@@ -39,6 +39,16 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
 - **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
 - **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Changements v10.5.0 : espaces livreur et vendeur, suivi en direct
+
+- **Espace livreur** : un lien personnel court (`?r=CODE`, sans compte). Le livreur voit uniquement les commandes confirmées qui lui sont attribuées (retrait chez le vendeur, client, itinéraire, à encaisser) et touche **Récupéré / Livré / Refusé**. L'action est enregistrée par la fonction Edge `space` (vérifie que la commande est bien à lui, pas de retour en arrière après Livré/Refusé) ; la commission de livraison est figée comme dans l'appli.
+- **Espace vendeur** : lien personnel en **lecture seule** (ses commandes, leur étape, le livreur, compteurs).
+- **Propriétaire** : dans Livreurs et dans la fiche vendeur, bouton « Lien de son espace » (copie le lien et ouvre WhatsApp) et « Nouveau lien » (l'ancien cesse de fonctionner immédiatement). Le propriétaire garde toutes les fonctions.
+- **Client** : le suivi court est **en direct** (la fonction `link` relit l'étape et le livreur dans la commande, la page se rafraîchit toute seule toutes les 30 s). Après « Je confirme », la page de confirmation propose « Suivre ma commande » : un seul lien suffit au client.
+- Nécessite le compte cloud actif (owner/admin/agent). Sans cela, le bouton le signale ; les liens de commande gardent leur ancien format.
+- Base : migration `supabase/applied/07_spaces.sql` ; fonctions `space` (nouvelle) et `link` (v2) déjà déployées en production.
+- Limites : jeton = secret du lien (quiconque l'a voit ces commandes, d'où « Nouveau lien ») ; expiration 180 jours renouvelée à chaque modification ; non testé sur de vrais téléphones ; la fonction `space` n'a pu être appelée en réel depuis cet environnement (testée avec une base simulée).
 
 ## Changements v10.4.0 : liens courts
 - Les liens envoyés aux clients (suivi, confirmation) et aux livreurs deviennent `https://…github.io/?r=Ab3xY9kLmN` (une cinquantaine de caractères) au lieu de plusieurs centaines. Les anciens longs liens déjà envoyés continuent de fonctionner.

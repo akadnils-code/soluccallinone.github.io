@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.4.0',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.5.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -244,7 +244,7 @@ function fiche(v){
   h+='<div class="card"><h2>Logo de la boutique</h2><input type="file" accept="image/*" data-photo="profile">'+(v.photo?'<button class="b full" data-act="vphdel">Retirer la photo</button>':'')+'</div>';
   h+='<div class="card"><h2>Coordonnées de la boutique</h2>'+VF.map(function(f){return '<label>'+f[1]+'</label><input data-vf="'+f[0]+'"'+(f[0]==='city'?' list="mc"':'')+(f[0]==='reg'?' type="number" min="0"':'')+' value="'+e(v[f[0]]||'')+'">'}).join('')+'<label>Présentation</label><textarea data-vf="desc">'+e(v.desc||'')+'</textarea><label>Notes privées</label><textarea data-vf="notes">'+e(v.notes||'')+'</textarea></div>';
   h+='<div class="card"><h2>Tarif négocié (facultatif)</h2><p class="mut">Laisse vide pour utiliser le tarif général ('+DB.set.cf+' + '+DB.set.bn+' dh). Le tarif est figé sur chaque commande au moment où elle est confirmée.</p><label>Par commande confirmée (dh)</label><input type="number" min="0" step="0.5" data-vfee="cf" value="'+((v.fees&&v.fees.cf!=null&&v.fees.cf!=='')?v.fees.cf:'')+'"><label>Bonus si livrée (dh)</label><input type="number" min="0" step="0.5" data-vfee="db" value="'+((v.fees&&v.fees.db!=null&&v.fees.db!=='')?v.fees.db:'')+'"></div>';
-  return h+'<div class="btns"><button class="b" data-act="vver" data-id="'+v.id+'">'+(v.ver?'Retirer le badge Vérifié':'Marquer comme vérifié')+'</button><button class="b ko" data-act="vdel" data-id="'+v.id+'">'+(S.del===v.id?'Confirmer la suppression ?':'Supprimer le vendeur')+'</button></div>';
+  return h+'<div class="btns"><button class="b pri" data-act="spl" data-k="vsp" data-id="'+v.id+'">Lien de son espace</button><button class="b" data-act="spn" data-k="vsp" data-id="'+v.id+'">Nouveau lien</button></div><div class="btns"><button class="b" data-act="vver" data-id="'+v.id+'">'+(v.ver?'Retirer le badge Vérifié':'Marquer comme vérifié')+'</button><button class="b ko" data-act="vdel" data-id="'+v.id+'">'+(S.del===v.id?'Confirmer la suppression ?':'Supprimer le vendeur')+'</button></div>';
 }
 function repV(v){var s=stats(DB.orders.filter(function(o){return o.vendor===v.name}));return 'Bilan '+v.name+' : '+s.n+' commandes, '+s.ok+' confirmées ('+pct(s.ok,s.n-s.pe)+'), '+s.liv+' livrées, '+s.ref+' refusées, '+s.ko+' annulées, '+s.un+' injoignables.'}
 function statement(v){
@@ -561,6 +561,86 @@ function encq(o){return encodeURIComponent(btoa(unescape(encodeURIComponent(JSON
 function decq(k){try{return JSON.parse(decodeURIComponent(escape(atob(Q.get(k)))))}catch(e){return null}}
 function vaddr(o){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0];return v?(v.addr||''):''}
 function vcity(o){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0];return v?v.city||'':''}
+
+/* espaces livreur / vendeur (10.5.0) : un lien personnel court, sans compte. Le serveur ne renvoie que les commandes de cette personne. */
+var SP={code:'',k:'',n:'',o:[],err:'',busy:'',ts:0,tm:0};
+var SPF='https://nrlganuculkiqmeemert.supabase.co/functions/v1/space/';
+function spaceLink(k,x){var CS=window.cloudShort;if(!(CS&&CS.ready()))return '';if(!/^[A-Za-z0-9]{10}$/.test(x.sp||'')){x.sp=CS.code();try{save()}catch(y){}}CS.put(x.sp,k,x.id,{n:x.name});return location.origin+location.pathname+'?r='+x.sp}
+function spCopy(u){try{var p=navigator.clipboard.writeText(u);if(p&&p.catch)p.catch(function(){})}catch(y){}}
+function spaceMsg(k,x,u){return k==='dsp'?'Bonjour '+x.name+', voici ton espace livreur : tu y vois uniquement tes livraisons et tu confirmes Récupéré / Livré / Refusé.\n'+u:'Bonjour '+x.name+', voici ton espace vendeur : tu y suis tes commandes en direct.\n'+u}
+document.addEventListener('click',function(ev){
+  var t=ev.target.closest('[data-act=spl],[data-act=spn]');if(!t||!DB)return;
+  var a=t.getAttribute('data-act'),k=t.getAttribute('data-k'),id=t.getAttribute('data-id'),x=(k==='dsp'?DB.cour:DB.vend).filter(function(y){return y.id===id})[0];if(!x)return;
+  var CS=window.cloudShort;if(!(CS&&CS.ready())){toast('Connecte le compte cloud (Réglages → Connexions) pour créer ce lien.');return}
+  if(a==='spn'){
+    if(!confirm('Créer un nouveau lien pour '+x.name+' ? L’ancien lien ne fonctionnera plus.'))return;
+    var old=x.sp;x.sp='';
+    Promise.resolve(old?CS.drop(old):0).catch(function(){}).then(function(){var u=spaceLink(k,x);if(!u){toast('Lien impossible pour le moment.');return}spCopy(u);toast('Nouveau lien copié ✓')});
+    return}
+  var u=spaceLink(k,x);if(!u){toast('Lien impossible pour le moment.');return}
+  spCopy(u);
+  toast('Lien copié ✓ (actif après la synchronisation)');
+  if(x.phone)window.open(wa(x.phone,spaceMsg(k,x,u)),'_blank','noopener')
+});
+function spLoad(){
+  fetch(SPF+SP.code,{cache:'no-store'}).then(function(r){return r.json().then(function(j){return{r:r,j:j}},function(){return{r:r,j:null}})}).then(function(z){
+    if(z.r.ok&&z.j&&Array.isArray(z.j.o)){SP.o=z.j.o;SP.n=z.j.n||SP.n;SP.err='';SP.ts=Date.now()}
+    else SP.err=z.r.status===410?'Ce lien a expiré. Demande un nouveau lien à ta boutique.':z.r.status===403?'Ce lien n’est plus disponible.':'Impossible de charger tes commandes. Réessaie dans un instant.';
+    spRender()
+  }).catch(function(){SP.err='Pas de connexion. Les commandes affichées peuvent ne pas être à jour.';spRender()})
+}
+function spaceBoot(code,k,n){
+  SP.code=code;SP.k=k;SP.n=n;SP.o=[];SP.err='';
+  solo('<h1>Chargement…</h1>');spLoad();
+  clearInterval(SP.tm);SP.tm=setInterval(function(){if(!document.hidden&&!SP.busy)spLoad()},30000);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&!SP.busy)spLoad()});
+  document.addEventListener('click',spClick)
+}
+function spLab(o){if(o.st!=='Confirmé')return o.st||'—';return o.d==='Livré'?'Livrée':o.d==='En cours'?'En route':o.d==='Refusé'?'Refusée':'Confirmée'}
+function spRender(){
+  var gm=function(q){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(q)},O=SP.o,h='';
+  var head='<h1>'+(SP.k==='dsp'?'Mes livraisons':'Mon espace')+'</h1><div class="mut" style="margin:-6px 0 10px">'+e(SP.n)+' · mis à jour '+new Date(SP.ts||Date.now()).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+' <button class="b sm" data-act="spr">Actualiser</button></div>'+(SP.err?'<div class="msg err">'+e(SP.err)+'</div>':'');
+  if(SP.k==='dsp'){
+    var todo=O.filter(function(o){return !o.d||o.d==='En cours'}),done=O.filter(function(o){return o.d==='Livré'||o.d==='Refusé'}).slice(0,20),cash=todo.reduce(function(s,o){return s+(+o.m||0)},0);
+    h=head+'<div class="card"><div class="kpi"><span class="mut">À récupérer</span><b>'+todo.filter(function(o){return !o.d}).length+'</b></div><div class="kpi"><span class="mut">En route</span><b>'+todo.filter(function(o){return o.d==='En cours'}).length+'</b></div><div class="kpi"><span class="mut">À encaisser</span><b>'+fm(cash)+' dh</b></div></div>';
+    h+=todo.length?todo.map(function(o){
+      var b=SP.busy===o.id,dis=b?' disabled':'';
+      return '<div class="card"><div class="row"><b>'+e(o.p)+'</b><span class="mut">'+fm(+o.m||0)+' dh</span></div>'
+       +(o.d?'':'<h2>1. Retrait chez '+e(o.v)+'</h2><div class="mut">'+e([o.va,o.vc].filter(Boolean).join(', '))+'</div><div class="btns">'+(o.vp?'<a class="b" href="tel:'+e(o.vp)+'">'+ico('phone')+' Appeler</a>':'')+'<a class="b" target="_blank" rel="noopener" href="'+gm([o.va,o.vc,'Maroc'].filter(Boolean).join(', '))+'">'+ico('pin')+' Itinéraire</a><button class="b pri"'+dis+' data-act="spa" data-oid="'+e(o.id)+'" data-a="pickup">Récupéré ✓</button></div>')
+       +'<h2>'+(o.d?'Livraison au client':'2. Livraison au client')+'</h2><div>'+e(o.n)+'</div><div class="mut">'+e([o.ca,o.cc].filter(Boolean).join(', '))+'</div><div class="btns"><a class="b" href="tel:'+e(o.cp)+'">'+ico('phone')+' Appeler</a><a class="b" target="_blank" rel="noopener" href="'+gm([o.ca,o.cc,'Maroc'].filter(Boolean).join(', '))+'">'+ico('pin')+' Itinéraire</a></div>'
+       +(o.d?'<div class="btns"><button class="b ok"'+dis+' data-act="spa" data-oid="'+e(o.id)+'" data-a="delivered">Livré ✓</button><button class="b ko"'+dis+' data-act="spa" data-oid="'+e(o.id)+'" data-a="refused">Refusé</button></div>':'<div class="btns"><button class="b ko"'+dis+' data-act="spa" data-oid="'+e(o.id)+'" data-a="refused">Refusé</button></div>')+'</div>'
+    }).join(''):'<div class="card"><p class="mut">Aucune livraison en cours. Cette page se met à jour toute seule.</p></div>';
+    if(done.length)h+='<h2>Terminées</h2>'+done.map(function(o){return '<div class="card"><div class="row"><b>'+e(o.p)+'</b><span class="mut">'+e(spLab(o))+'</span></div><div class="mut">'+e(o.n)+' · '+e(o.cc)+' · '+fm(+o.m||0)+' dh</div></div>'}).join('')
+  }else{
+    var c=function(f){return O.filter(f).length},liv=c(function(o){return o.st==='Confirmé'&&o.d==='Livré'}),ref=c(function(o){return o.d==='Refusé'});
+    h=head+'<div class="card"><div class="kpi"><span class="mut">Commandes</span><b>'+O.length+'</b></div><div class="kpi"><span class="mut">En attente</span><b>'+c(function(o){return o.st==='En attente'})+'</b></div><div class="kpi"><span class="mut">En route</span><b>'+c(function(o){return o.st==='Confirmé'&&o.d==='En cours'})+'</b></div><div class="kpi"><span class="mut">Livrées</span><b>'+liv+'</b></div><div class="kpi"><span class="mut">Refusées</span><b>'+ref+'</b></div></div>';
+    h+=O.length?O.map(function(o){return '<div class="card"><div class="row"><b>'+e(o.p)+'</b><span class="mut">'+e(spLab(o))+'</span></div><div class="mut">'+e(o.n)+' · '+e(o.cc)+' · '+fm(+o.m||0)+' dh'+(o.c?' · livreur '+e(o.c):'')+'</div></div>'}).join(''):'<div class="card"><p class="mut">Aucune commande pour le moment.</p></div>'
+  }
+  var y=window.scrollY;solo(h);window.scrollTo(0,y)
+}
+function spClick(ev){
+  var t=ev.target.closest('[data-act=spr],[data-act=spa]');if(!t)return;
+  var a=t.getAttribute('data-act');
+  if(a==='spr'){spLoad();return}
+  var id=t.getAttribute('data-oid'),ac=t.getAttribute('data-a');if(SP.busy)return;
+  if(ac==='refused'&&!confirm('Confirmer : le client a refusé la commande ?'))return;
+  SP.busy=id;spRender();
+  fetch(SPF+SP.code,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,a:ac})}).then(function(r){return r.json().then(function(j){return{r:r,j:j}},function(){return{r:r,j:null}})}).then(function(z){
+    SP.busy='';
+    if(z.r.ok){SP.err='';SP.o.forEach(function(o){if(o.id===id)o.d=z.j.d})}
+    else SP.err=z.r.status===409?'Cette commande est déjà clôturée.':z.r.status===404?'Cette commande ne t’est plus attribuée.':'Enregistrement impossible. Réessaie dans un instant.';
+    spRender();if(!z.r.ok)spLoad()
+  }).catch(function(){SP.busy='';SP.err='Pas de connexion : ton action n’a pas été enregistrée. Réessaie.';spRender()})
+}
+
+/* suivi client en direct (10.5.0) : la page de suivi relit l'étape toutes les 30 s (la fonction link la lit dans la commande) */
+function shLive(code,d0){
+  var cur=JSON.stringify([d0.s,d0.c,d0.bad]);
+  var go=function(){if(document.hidden)return;fetch('https://nrlganuculkiqmeemert.supabase.co/functions/v1/link/'+code,{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){
+    if(!j||j.k!=='t'||!j.d)return;var n=JSON.stringify([j.d.s,j.d.c,j.d.bad]);
+    if(n!==cur){cur=n;Q=new URLSearchParams('t='+encq(j.d));renderClient()}}).catch(function(){})};
+  setInterval(go,30000);document.addEventListener('visibilitychange',go)
+}
 /* liens courts (10.4.0) : ...?r=CODE si le compte cloud est actif (voir cloud.js, cloudShort), sinon l'ancien long lien */
 function slink(o,k,base,p,pl){var CS=window.cloudShort;
   if(CS&&CS.ready()){var f='rc'+k;if(!/^[A-Za-z0-9]{10}$/.test(o[f]||'')){o[f]=CS.code();try{save()}catch(x){}}CS.put(o[f],k,o.id,pl);return base+'?r='+o[f]}
@@ -631,7 +711,7 @@ function vlinks(x){var l='';
   if(x.site)l+='<a class="b" target="_blank" rel="noopener" href="'+ext(x.site)+'">'+ico('link')+' Lien</a>';
   return l?'<div class="btns">'+l+'</div>':''}
 var STK=['À valider','Validées','En cours de livraison','Livrées'];
-function livlist(){return '<h2>Livreurs ('+DB.cour.length+')</h2>'+DB.cour.map(function(w){return '<div class="card"><div class="row"><b>'+e(w.name)+'</b><span class="mut">'+e(w.city)+'</span></div>'+vhsel(w)+'<div class="mut">'+e(w.prod||'')+(w.price?' · tarif '+w.price+' dh':'')+'</div><div class="btns"><a class="b" target="_blank" rel="noopener" href="'+wa(w.phone,'Bonjour '+w.name+',')+'">'+ico('chat','s')+' Écrire</a><button class="b" data-act="ndel" data-id="'+w.id+'">'+(S.del===w.id?'Confirmer la suppression ?':'Supprimer')+'</button></div></div>'}).join('')}
+function livlist(){return '<h2>Livreurs ('+DB.cour.length+')</h2>'+DB.cour.map(function(w){return '<div class="card"><div class="row"><b>'+e(w.name)+'</b><span class="mut">'+e(w.city)+'</span></div>'+vhsel(w)+'<div class="mut">'+e(w.prod||'')+(w.price?' · tarif '+w.price+' dh':'')+'</div><div class="btns"><a class="b" target="_blank" rel="noopener" href="'+wa(w.phone,'Bonjour '+w.name+',')+'">'+ico('chat','s')+' Écrire</a><button class="b pri" data-act="spl" data-k="dsp" data-id="'+w.id+'">Lien de son espace</button><button class="b" data-act="spn" data-k="dsp" data-id="'+w.id+'">Nouveau lien</button><button class="b" data-act="ndel" data-id="'+w.id+'">'+(S.del===w.id?'Confirmer la suppression ?':'Supprimer')+'</button></div></div>'}).join('')}
 
 function solo(html){document.querySelector('header').style.display='none';$('nav').style.display='none';document.body.style.paddingBottom='20px';$('app').innerHTML=html;lmFlush()}
 function courFilter(){return DB.cour.length?'<select id="tf"><option value="">Tous les livreurs</option>'+DB.cour.map(function(x){return '<option'+(S.tf===x.name?' selected':'')+'>'+e(x.name)+'</option>'}).join('')+'</select>':''}
@@ -1997,7 +2077,8 @@ function shortBoot(){
   if(!/^[A-Za-z0-9]{10}$/.test(code||''))return msg('Lien invalide. Demande un nouveau lien à ta boutique.');
   solo('<h1>Ouverture du lien…</h1>');
   fetch('https://nrlganuculkiqmeemert.supabase.co/functions/v1/link/'+code,{cache:'no-store'}).then(function(r){return r.json().then(function(j){return{r:r,j:j}},function(){return{r:r,j:null}})}).then(function(z){
-    if(z.r.ok&&z.j&&z.j.d&&/^(t|l|cf)$/.test(z.j.k)){Q=new URLSearchParams(z.j.k+'='+encq(z.j.d));if(Q.get('t')||Q.get('l')||Q.get('v'))dar();boot();return}
+    if(z.r.ok&&z.j&&z.j.d&&/^(dsp|vsp)$/.test(z.j.k)){spaceBoot(code,z.j.k,String(z.j.d.n||''));return}
+    if(z.r.ok&&z.j&&z.j.d&&/^(t|l|cf)$/.test(z.j.k)){Q=new URLSearchParams(z.j.k+'='+encq(z.j.d));if(Q.get('t')||Q.get('l')||Q.get('v'))dar();boot();if(z.j.k==='t')shLive(code,z.j.d);return}
     msg(z.r.status===410?'Ce lien a expiré. Demande un nouveau lien à ta boutique.':z.r.status===403?'Ce lien n’est plus disponible.':'Lien introuvable. Vérifie qu’il est complet ou demande un nouveau lien à ta boutique.')
   }).catch(function(){msg('Pas de connexion. Vérifie ton réseau puis recharge la page.')})
 }
@@ -2913,7 +2994,7 @@ document.addEventListener('input',function(ev){if(ev.target.id!=='cf-a')return;C
 function cfWa(ok,a){var d=window.__cf;
   var rep=SU()+'?rep='+encq({i:d.i,s:ok?'ok':'x',a:a.trim(),la:CP.lat,ln:CP.lng}),m=(ok?'✅ Commande confirmée':'❌ Commande annulée')+' · '+(d.pr||'')+'\n'+(ok?'Adresse : '+a.trim()+(CP.lat?' (vérifiée GPS)\nhttps://maps.google.com/?q='+CP.lat+','+CP.lng:' (non vérifiée)')+'\n':'')+'\nOuvrir dans mon appli : '+rep;
   location.href='https://wa.me/'+waNum(d.w)+'?text='+encodeURIComponent(m)}
-function cfDone(ok){var d=window.__cf||{};$('app').innerHTML='<div class="card" style="max-width:480px;margin:12px auto;text-align:center"><h1>'+(ok?'✅ Merci !':'Commande annulée')+'</h1><p>'+(ok?'Ta commande est confirmée. La boutique prépare l’expédition, le livreur te contactera.':'Ta commande est annulée. Aucune action de ta part n’est nécessaire.')+'</p>'+(d.w?'<a class="b full" target="_blank" rel="noopener" href="'+wa(d.w,'Bonjour, une question sur ma commande « '+(d.pr||'')+' ».')+'">Contacter la boutique</a>':'')+'</div>'}
+function cfDone(ok){var d=window.__cf||{};$('app').innerHTML='<div class="card" style="max-width:480px;margin:12px auto;text-align:center"><h1>'+(ok?'✅ Merci !':'Commande annulée')+'</h1><p>'+(ok?'Ta commande est confirmée. La boutique prépare l’expédition, le livreur te contactera.':'Ta commande est annulée. Aucune action de ta part n’est nécessaire.')+'</p>'+(ok&&/^[A-Za-z0-9]{10}$/.test(d.tc||'')?'<a class="b pri full" style="margin-bottom:8px" href="?r='+d.tc+'">Suivre ma commande</a>':'')+(d.w?'<a class="b full" target="_blank" rel="noopener" href="'+wa(d.w,'Bonjour, une question sur ma commande « '+(d.pr||'')+' ».')+'">Contacter la boutique</a>':'')+'</div>'}
 function cfSend(ok){var d=window.__cf,a=(document.getElementById('cf-a')||{}).value||'';if(!d||!d.w){alert('Contact de la boutique introuvable.');return}
   if(ok&&!a.trim()){cfMsg('Écris ton adresse avant de confirmer.');return}
   if(d.k&&d.u&&/^https:/.test(d.u)){cfMsg('Envoi en cours…');
@@ -2950,6 +3031,7 @@ window.homeShops=function(){_hs();var A=$('app');if(!A||$('imp'))return;
 document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.target.closest('[data-x9]');if(!t)return;var a=t.getAttribute('data-x9'),id=t.getAttribute('data-id');
   if(a==='cf'){ev.preventDefault();var o=oid(id);if(!o)return;if(!DB.set.phone){toast('Renseigne d’abord ton numéro dans ton profil.');return}if(!/^http/.test(SU())){toast('Ouvre l’application depuis son adresse https.');return}
     var d={i:o.id,n:String(o.name||'').split(' ')[0],pr:o.product||'',t:(+o.amount||0),a:o.address||'',c:o.city||'',w:DB.set.phone,b:DB.set.pco||DB.set.holder||''};
+    try{var tu=tlink(o,'t'),tm=/\?r=([A-Za-z0-9]{10})$/.exec(tu||'');if(tm)d.tc=tm[1]}catch(x){}
     if(window.cloudWebhookUrl&&DB.set.whk&&DB.set.whk===DB.set.ikey&&DB.set.rtok){d.u=cloudWebhookUrl('x').replace(/\/webhook\/.*$/,'/reply');d.k=DB.set.rtok}
     else if(!window.__hint){window.__hint=1;setTimeout(function(){toast('Astuce : active « Réception automatique » (Réglages › Connexions) pour que les confirmations arrivent toutes seules.')},1500)}
     window.open(wa(o.phone,'Bonjour '+d.n+', ici '+(d.b||'votre boutique')+'. Merci de confirmer votre commande ('+d.pr+') et de vérifier votre adresse en 1 clic : '+slink(o,'cf',SU(),'cf',d)),'_blank')}
