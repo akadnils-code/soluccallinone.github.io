@@ -1,4 +1,4 @@
-# All In One — Amk Logistique (v10.3.1)
+# All In One — Amk Logistique (v10.3.2)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
@@ -39,6 +39,10 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
 - **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
 - **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Changements v10.3.2
+- Entreprise suspendue : l’erreur brute du serveur est remplacée par un message clair (synchronisation arrêtée, données conservées sur le téléphone). Aucune autre modification du code de l’application.
+- Cache du service worker `cod-v83`.
 
 ## Suivi des livreurs (v10.3.1)
 

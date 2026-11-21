@@ -23,7 +23,8 @@
     if (/Email not confirmed/i.test(m)) return 'E-mail non confirmé : ouvre le message reçu puis reconnecte-toi.';
     if (/rate limit|too many/i.test(m)) return 'Trop de tentatives : réessaie dans quelques minutes.';
     if (/Failed to fetch|NetworkError|Load failed/i.test(m)) return 'Pas de connexion internet.';
-    if (/Accès refusé/.test(m)) return 'Accès refusé : seul le propriétaire ou un administrateur peut faire cette action.';
+    if (/row-level security|permission denied/i.test(m)) return 'Accès refusé par le serveur : l’entreprise est peut-être suspendue. La synchronisation est arrêtée, tes données restent sur ce téléphone. Contacte le support.';
+    if (/Accès refusé/.test(m)) return 'Accès refusé : seul le propriétaire ou un administrateur d’une entreprise active peut faire cette action.';
     return m || 'Erreur inconnue.';
   }
 
