@@ -1,4 +1,4 @@
-# All In One — Amk Logistique (v10.3.2)
+# All In One — Amk Logistique (v10.4.0)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
@@ -39,6 +39,15 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
 - **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
 - **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Changements v10.4.0 : liens courts
+- Les liens envoyés aux clients (suivi, confirmation) et aux livreurs deviennent `https://…github.io/?r=Ab3xY9kLmN` (une cinquantaine de caractères) au lieu de plusieurs centaines. Les anciens longs liens déjà envoyés continuent de fonctionner.
+- Fonctionnement : l'application enregistre le contenu du lien dans la table `short_links` (Supabase, `supabase/applied/06_short_links.sql`) ; la fonction Edge `link` (`supabase/functions/link/`) le rend à la page ouverte. Le contenu est mis à jour tout seul quand la commande change (même lien, nouvelle étape). Valide 180 jours après la dernière mise à jour.
+- Condition : compte cloud connecté, entreprise active, rôle propriétaire, administrateur ou agent. Sinon l'application garde l'ancien long lien : rien ne casse hors connexion.
+- L'enregistrement part en arrière-plan et se rejoue tout seul tant qu'il n'a pas réussi : si le vendeur envoie le lien au moment exact où il n'a plus de réseau, le client peut voir « Lien introuvable » ; renvoyer le lien règle le cas.
+- À savoir : le contenu des liens (nom, adresse et téléphone du client pour le lien livreur, jetons de suivi) est maintenant aussi stocké dans Supabase, protégé par RLS (écriture par entreprise active, lecture publique uniquement par code de 10 caractères tiré au hasard). C'est le prix des liens courts. Révocation : `update public.short_links set revoked = true where order_id = '…'`.
+- Tests : `test/e2e-short-link.test.js` (11 cas, Chromium) et `supabase/functions/link/link.test.mjs` (13 cas).
+- Cache du service worker `cod-v84`.
 
 ## Changements v10.3.2
 - Entreprise suspendue : l’erreur brute du serveur est remplacée par un message clair (synchronisation arrêtée, données conservées sur le téléphone). Aucune autre modification du code de l’application.

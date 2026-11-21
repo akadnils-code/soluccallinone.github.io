@@ -1,6 +1,6 @@
 /* All In One 8.3.0 - script principal
    Sections repérées : modules réintégrés de la v3 | v5 : code de livraison, avis, demandes, motifs livreur, sati | v6 : catalogue, créneaux, photo de preuve, notifications, da | v7 : automatisations | v7.2 : QR code + NFC (QR hors ligne, aucune dépendance résea | v7.4 : scanner QR (caméra), tags NFC associés, diagnostic */
-var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.3.2',IT=200000;
+var CIT=200000,KEY='cod_v4',OLDKEY='cod_v1',VER='10.4.0',IT=200000;
 var OM={},CXS={l:null};
 var DEFTPL='Bonjour 👋 [boutique] a essayé de vous joindre pour confirmer votre commande de [produit]. Répondez OUI pour confirmer, ou dites-nous à quelle heure vous rappeler. Merci !';
 var DEFSCRIPT='1) Se présenter : « Bonjour, je vous appelle de la part de [boutique]. »\n2) Confirmer le produit, la quantité, le prix et la livraison.\n3) Confirmer la ville et l’adresse exacte (quartier, repère).\n4) Proposer un produit complémentaire ou un pack.\n5) Rappeler : paiement à la livraison, merci de préparer le montant.';
@@ -561,10 +561,14 @@ function encq(o){return encodeURIComponent(btoa(unescape(encodeURIComponent(JSON
 function decq(k){try{return JSON.parse(decodeURIComponent(escape(atob(Q.get(k)))))}catch(e){return null}}
 function vaddr(o){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0];return v?(v.addr||''):''}
 function vcity(o){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0];return v?v.city||'':''}
+/* liens courts (10.4.0) : ...?r=CODE si le compte cloud est actif (voir cloud.js, cloudShort), sinon l'ancien long lien */
+function slink(o,k,base,p,pl){var CS=window.cloudShort;
+  if(CS&&CS.ready()){var f='rc'+k;if(!/^[A-Za-z0-9]{10}$/.test(o[f]||'')){o[f]=CS.code();try{save()}catch(x){}}CS.put(o[f],k,o.id,pl);return base+'?r='+o[f]}
+  return base+'?'+p+'='+encq(pl)}
 function tlink(o,k){var v=DB.vend.filter(function(x){return x.name===o.vendor})[0]||{},base=location.href.split(/[?#]/)[0];
   var api=trackApiUrl(DB.set.trackApi),keys=trackKeys(o);if(api)pub(o);
-  if(k==='t')return base+'?t='+encq({v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:stage(o),w:DB.set.phone,c:o.courier||'',ve:vehOf(o.courier),db:api?DB.set.db||'':'',api:api,ck:api?keys.client:'',tid:tid(o)});
-  return base+'?l='+encq({id:o.id,v:o.vendor,vp:v.phone||'',va:v.addr||'',vc:vcity(o),n:o.name,cp:o.phone,ca:o.address||'',cc:o.city||'',p:o.product,m:o.amount||0,w:DB.set.phone,s:stage(o),ve:vehOf(o.courier),db:api?DB.set.db||'':'',api:api,dk:api?keys.courier:'',tid:tid(o)})}
+  if(k==='t')return slink(o,'t',base,'t',{v:o.vendor,vc:vcity(o),cc:o.city||'',p:o.product,s:stage(o),w:DB.set.phone,c:o.courier||'',ve:vehOf(o.courier),db:api?DB.set.db||'':'',api:api,ck:api?keys.client:'',tid:tid(o)});
+  return slink(o,'l',base,'l',{id:o.id,v:o.vendor,vp:v.phone||'',va:v.addr||'',vc:vcity(o),n:o.name,cp:o.phone,ca:o.address||'',cc:o.city||'',p:o.product,m:o.amount||0,w:DB.set.phone,s:stage(o),ve:vehOf(o.courier),db:api?DB.set.db||'':'',api:api,dk:api?keys.courier:'',tid:tid(o)})}
 var CL={},CLT=0;
 function fmt(n){var m=Math.round(n);return m<60?m+' min':Math.floor(m/60)+' h '+(m%60?m%60+' min':'')}
 function renderClient(){
@@ -1987,7 +1991,17 @@ var _rd4=render;render=function(){_rd4();if(GO&&DB&&!S.locked){var g=GO;GO='';tr
 var _rl3=renderCourier;renderCourier=function(){_rl3();if(!decq('l'))return;if(!$('scc'))$('app').insertAdjacentHTML('afterbegin','<div class="card" id="scc"><h2>Scanner</h2><div class="btns"><button class="b pri" data-act="scn">Scanner le colis</button><button class="b" data-act="scn">QR du client</button></div></div>')};
 var _rc3=renderClient;renderClient=function(){_rc3();var d=decq('t');if(!d||!d.tid)return;var m=Object.assign({},d,CL);if(d.api&&!m.bad&&(m.s||0)===2&&dcode(m)&&!$('cqr'))$('app').insertAdjacentHTML('beforeend','<div class="card" id="cqr" style="text-align:center"><h2>QR de livraison</h2><div style="background:#fff;padding:6px;border-radius:12px;width:min(70vw,240px);margin:0 auto">'+qrSvg('AMK|'+d.tid+'|'+dcode(m)).replace('<svg ','<svg style="display:block;width:100%;height:auto" ')+'</div><p class="mut">À montrer au livreur après avoir vérifié ton colis.</p></div>')};
 
-boot();
+/* liens courts (10.4.0) : ?r=CODE -> la fonction Edge « link » rend la même charge utile qu'un ancien long lien */
+function shortBoot(){
+  var code=Q.get('r'),msg=function(m){solo('<h1>Lien</h1><div class="card"><p class="mut">'+e(m)+'</p></div>')};
+  if(!/^[A-Za-z0-9]{10}$/.test(code||''))return msg('Lien invalide. Demande un nouveau lien à ta boutique.');
+  solo('<h1>Ouverture du lien…</h1>');
+  fetch('https://nrlganuculkiqmeemert.supabase.co/functions/v1/link/'+code,{cache:'no-store'}).then(function(r){return r.json().then(function(j){return{r:r,j:j}},function(){return{r:r,j:null}})}).then(function(z){
+    if(z.r.ok&&z.j&&z.j.d&&/^(t|l|cf)$/.test(z.j.k)){Q=new URLSearchParams(z.j.k+'='+encq(z.j.d));if(Q.get('t')||Q.get('l')||Q.get('v'))dar();boot();return}
+    msg(z.r.status===410?'Ce lien a expiré. Demande un nouveau lien à ta boutique.':z.r.status===403?'Ce lien n’est plus disponible.':'Lien introuvable. Vérifie qu’il est complet ou demande un nouveau lien à ta boutique.')
+  }).catch(function(){msg('Pas de connexion. Vérifie ton réseau puis recharge la page.')})
+}
+if(Q.get('r'))shortBoot();else boot();
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
 
 /* ===== 7.8 : accueil style marketplace (structure Jumia, couleurs premium) ===== */
@@ -2938,7 +2952,7 @@ document.addEventListener('click',function(ev){var t=ev.target.closest&&ev.targe
     var d={i:o.id,n:String(o.name||'').split(' ')[0],pr:o.product||'',t:(+o.amount||0),a:o.address||'',c:o.city||'',w:DB.set.phone,b:DB.set.pco||DB.set.holder||''};
     if(window.cloudWebhookUrl&&DB.set.whk&&DB.set.whk===DB.set.ikey&&DB.set.rtok){d.u=cloudWebhookUrl('x').replace(/\/webhook\/.*$/,'/reply');d.k=DB.set.rtok}
     else if(!window.__hint){window.__hint=1;setTimeout(function(){toast('Astuce : active « Réception automatique » (Réglages › Connexions) pour que les confirmations arrivent toutes seules.')},1500)}
-    window.open(wa(o.phone,'Bonjour '+d.n+', ici '+(d.b||'votre boutique')+'. Merci de confirmer votre commande ('+d.pr+') et de vérifier votre adresse en 1 clic : '+SU()+'?cf='+encq(d)),'_blank')}
+    window.open(wa(o.phone,'Bonjour '+d.n+', ici '+(d.b||'votre boutique')+'. Merci de confirmer votre commande ('+d.pr+') et de vérifier votre adresse en 1 clic : '+slink(o,'cf',SU(),'cf',d)),'_blank')}
   else if(a==='cfpick'){var x=CS[+id];if(!x)return;document.getElementById('cf-a').value=x.t;CP.lat=x.lat;CP.lng=x.lng;document.getElementById('cf-s').innerHTML='';cfMsg('✅ Adresse vérifiée · position enregistrée')}
   else if(a==='cfgps'){if(!navigator.geolocation){cfMsg('Position indisponible sur cet appareil.');return}cfMsg('Localisation…');navigator.geolocation.getCurrentPosition(function(p){CP.lat=p.coords.latitude;CP.lng=p.coords.longitude;
       fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=fr&zoom=18&lat='+CP.lat+'&lon='+CP.lng).then(function(r){return r.json()}).then(function(j){if(j&&j.display_name)document.getElementById('cf-a').value=j.display_name.split(', ').slice(0,3).join(', ');cfMsg('✅ Position enregistrée')}).catch(function(){cfMsg('✅ Position enregistrée')})},function(){cfMsg('Localisation refusée.')},{enableHighAccuracy:true,timeout:15000})}

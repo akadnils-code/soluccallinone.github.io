@@ -1,0 +1,50 @@
+// Test de la fonction Edge « link » avec une base simulée. Lancer : node supabase/functions/link/link.test.mjs (Node 22.18 ou plus récent)
+let handler;
+globalThis.Deno = { env: { get: (k) => ({ SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'srk' })[k] }, serve: (h) => { handler = h; } };
+await import('./index.ts');
+const J = (o, status = 200) => ({ ok: status < 400, status, json: async () => o, text: async () => JSON.stringify(o) });
+const FUT = new Date(Date.now() + 864e5).toISOString(), PAST = new Date(Date.now() - 864e5).toISOString();
+let calls;
+function mock(cfg) {
+  calls = [];
+  globalThis.fetch = async (url, opt = {}) => {
+    calls.push({ url, headers: opt.headers });
+    if (url.includes('/short_links?')) return cfg.dbError ? J({}, 500) : J(cfg.rows || []);
+    if (url.includes('/tenants?')) return J([{ status: cfg.status || 'active' }]);
+    throw new Error('appel inattendu ' + url);
+  };
+}
+const get = (code, method = 'GET') => handler(new Request('https://x/functions/v1/link/' + code, { method }));
+const row = (o = {}) => ({ kind: 't', payload: { p: 'Robe', v: 'Boutique' }, tenant_id: 'T1', revoked: false, expires_at: FUT, ...o });
+let fails = 0;
+const check = (name, cond, extra = '') => { console.log((cond ? 'OK   ' : 'ECHEC') + ' ' + name + (cond ? '' : ' ' + extra)); if (!cond) fails++; };
+const CODE = 'Ab3xY9kLmN';
+
+mock({}); let r = await get('abc');
+check('1 code trop court -> 400, aucun appel base', r.status === 400 && calls.length === 0);
+mock({}); r = await get('Ab3xY9kLm!');
+check('2 caractère interdit -> 400', r.status === 400 && calls.length === 0);
+mock({}); r = await get("Ab3xY9kLmN'%20or%201=1");
+check('3 tentative d’injection -> 400', r.status === 400 && calls.length === 0);
+mock({ rows: [] }); r = await get(CODE);
+check('4 code inconnu -> 404', r.status === 404);
+mock({ rows: [row()] }); r = await get(CODE); let j = await r.json();
+check('5 lien valide -> 200 {k,d}', r.status === 200 && j.k === 't' && j.d.p === 'Robe' && r.headers.get('cache-control') === 'no-store', JSON.stringify(j));
+mock({ rows: [row({ kind: 'cf', payload: { i: 'o1', n: 'Sara' } })] }); r = await get(CODE); j = await r.json();
+check('6 type cf conservé', j.k === 'cf' && j.d.n === 'Sara');
+mock({ rows: [row({ revoked: true })] }); r = await get(CODE);
+check('7 lien révoqué -> 410', r.status === 410);
+mock({ rows: [row({ expires_at: PAST })] }); r = await get(CODE);
+check('8 lien expiré -> 410', r.status === 410);
+mock({ rows: [row()], status: 'suspended' }); r = await get(CODE);
+check('9 entreprise suspendue -> 403', r.status === 403);
+mock({ dbError: true }); r = await get(CODE);
+check('10 base en erreur -> 502', r.status === 502);
+mock({}); r = await get(CODE, 'POST');
+check('11 POST refusé -> 405', r.status === 405 && calls.length === 0);
+mock({}); r = await handler(new Request('https://x/functions/v1/link/' + CODE, { method: 'OPTIONS' }));
+check('12 OPTIONS -> 204 avec CORS', r.status === 204 && r.headers.get('access-control-allow-origin') === '*');
+mock({ rows: [row()] }); await get(CODE);
+check('13 la clé service n’est jamais renvoyée au client', !JSON.stringify(await (await get(CODE)).json()).includes('srk'));
+console.log(fails ? '\n' + fails + ' ECHEC(S)' : '\nTous les tests passent');
+process.exit(fails ? 1 : 0);
