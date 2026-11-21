@@ -203,3 +203,21 @@ test('confirmation client : après « Je confirme », bouton « Suivre ma comman
     assert.deepEqual(errors, []);
   });
 });
+
+test('espace livreur : si le chargement échoue, message clair + « Réessayer » (jamais « Aucune livraison »)', async (t) => {
+  await withPage(t, {}, async ({ page, base, errors }) => {
+    let fail = true;
+    await page.route(SB + '/functions/v1/space/*', (route) => fail
+      ? route.fulfill({ status: 502, contentType: 'application/json', body: '{"error":"service indisponible"}' })
+      : route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ k: 'dsp', n: 'Kad', o: ORD() }) }));
+    await page.goto(base + '/index.html?r=KKKKKKKKKK');
+    await page.waitForSelector('button:has-text("Réessayer")', { timeout: 8000 });
+    const txt = await text(page);
+    assert.match(txt, /Impossible de charger/);
+    assert.doesNotMatch(txt, /Aucune livraison/);
+    fail = false;
+    await page.click('button:has-text("Réessayer")');
+    await page.waitForFunction(() => /Robe rouge/.test(document.getElementById('app').innerText), null, { timeout: 8000 });
+    assert.deepEqual(errors, []);
+  });
+});
