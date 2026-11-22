@@ -13,14 +13,14 @@ function mock(cfg) {
     if (url.includes('/tenants?')) return J([{ status: cfg.status || 'active' }]);
     if (url.includes('/vendors?')) return J([{ name: 'Boutique', data: { phone: '0600', addr: 'Rue 1', city: 'Rabat' } }]);
     if (url.includes('/orders?') && (opt.method || 'GET') === 'GET') return J(cfg.orders || []);
-    if (url.includes('/orders?') && opt.method === 'PATCH') return J({}, cfg.patchStatus || 200);
+    if (url.includes('/orders?') && opt.method === 'PATCH') return J(cfg.patchStatus ? {} : (cfg.stale ? [] : [{ id: 'o1' }]), cfg.patchStatus || 200);
     throw new Error('appel inattendu ' + url);
   };
 }
 const CODE = 'Ab3xY9kLmN';
 const req = (method, body, code = CODE) => handler(new Request('https://x/functions/v1/space/' + code, { method, body: body ? JSON.stringify(body) : undefined }));
 const link = (o = {}) => ({ kind: 'dsp', payload: { n: 'Ali' }, tenant_id: 'T1', revoked: false, expires_at: FUT, ...o });
-const ord = (o = {}, id = 'o1') => ({ id, deleted_at: null, data: { product: 'Robe', amount: 200, city: 'Fès', name: 'Sara', phone: '0611', address: 'Av 2', vendor: 'Boutique', courier: 'Ali', status: 'Confirmé', delivery: '', bd: 12, ...o } });
+const ord = (o = {}, id = 'o1') => ({ id, deleted_at: null, updated_at: '2026-11-21T10:00:00.123456+00:00', data: { product: 'Robe', amount: 200, city: 'Fès', name: 'Sara', phone: '0611', address: 'Av 2', vendor: 'Boutique', courier: 'Ali', status: 'Confirmé', delivery: '', bd: 12, ...o } });
 let fails = 0;
 const check = (name, cond, extra = '') => { console.log((cond ? 'OK   ' : 'ECHEC') + ' ' + name + (cond ? '' : ' ' + extra)); if (!cond) fails++; };
 
@@ -73,6 +73,10 @@ mock({ rows: [link({ kind: 'vsp', payload: { n: 'Boutique' } })], orders: [ord()
 check('21 espace vendeur : écriture refusée -> 403', r.status === 403 && !calls.some((c) => c.opt.method === 'PATCH'));
 mock({ rows: [link()], orders: [ord()], patchStatus: 500 }); r = await req('POST', { id: 'o1', a: 'delivered' });
 check('22 écriture en erreur -> 502', r.status === 502);
+mock({ rows: [link()], orders: [ord()] }); await req('POST', { id: 'o1', a: 'delivered' });
+check('22b écriture conditionnée à updated_at (aucun écrasement)', /updated_at=eq\.2026-11-21T10%3A00%3A00\.123456%2B00%3A00/.test(calls.find((c) => c.opt.method === 'PATCH').url), calls.find((c) => c.opt.method === 'PATCH').url);
+mock({ rows: [link()], orders: [ord()], stale: true }); r = await req('POST', { id: 'o1', a: 'delivered' });
+check('22c commande modifiée entre-temps -> 409, pas d’écrasement', r.status === 409);
 mock({}); r = await req('DELETE');
 check('23 DELETE -> 405', r.status === 405);
 console.log(fails ? '\n' + fails + ' ECHEC(S)' : '\nTous les tests passent');

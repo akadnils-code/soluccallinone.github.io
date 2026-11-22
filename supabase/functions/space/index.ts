@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     try { b = await req.json(); } catch { return out({ error: 'json' }, 400); }
     const id = s(b && b.id, 80), ev = EV[b && b.a];
     if (!id || !ev) return out({ error: 'requête invalide' }, 400);
-    const r = await fetch(SB + '/rest/v1/orders?select=id,data,deleted_at&tenant_id=eq.' + L.tid + '&id=eq.' + encodeURIComponent(id) + '&limit=1', { headers: H });
+    const r = await fetch(SB + '/rest/v1/orders?select=id,data,deleted_at,updated_at&tenant_id=eq.' + L.tid + '&id=eq.' + encodeURIComponent(id) + '&limit=1', { headers: H });
     const j = r.ok ? await r.json() : [];
     const o = j[0];
     if (!own(o, k, L.n) || o.data.status !== 'Confirmé') return out({ error: 'commande introuvable' }, 404);
@@ -79,8 +79,11 @@ Deno.serve(async (req) => {
     if (cur === 'Livré' || cur === 'Refusé' || cur === 'Annulé') return out({ error: 'commande déjà clôturée', d: cur }, 409);
     if (cur === ev) return out({ ok: true, d: ev, dup: true });
     const d = Object.assign({}, o.data, { delivery: ev, fd: ev === 'Livré' ? (+o.data.bd || 0) : 0, ts: Date.now() });
-    const w = await fetch(SB + '/rest/v1/orders?tenant_id=eq.' + L.tid + '&id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' }, body: JSON.stringify({ delivery: ev, data: d }) });
+    // Écriture « si rien n'a changé » : si le propriétaire a modifié la commande entre la lecture et l'écriture, on ne l'écrase pas.
+    const w = await fetch(SB + '/rest/v1/orders?tenant_id=eq.' + L.tid + '&id=eq.' + encodeURIComponent(id) + '&updated_at=eq.' + encodeURIComponent(o.updated_at), { method: 'PATCH', headers: { ...H, Prefer: 'return=representation' }, body: JSON.stringify({ delivery: ev, data: d }) });
     if (!w.ok) { console.error('patch', w.status, await w.text()); return out({ error: 'enregistrement impossible' }, 502); }
+    const wj = await w.json();
+    if (!Array.isArray(wj) || !wj.length) return out({ error: 'commande modifiée à l’instant, réessaie' }, 409);
     return out({ ok: true, d: ev });
   }
   return out({ error: 'méthode refusée' }, 405);

@@ -65,7 +65,7 @@ async function withPage(t, opts, handler) {
     if (req.method() === 'POST') {
       const b = JSON.parse(req.postData());
       posts.push(b);
-      if (st.postStatus !== 200) return route.fulfill({ status: st.postStatus, contentType: 'application/json', body: '{"error":"x"}' });
+      if (st.postStatus !== 200) return route.fulfill({ status: st.postStatus, contentType: 'application/json', body: st.postStatus === 409 ? JSON.stringify(st.postBody || { error: 'x', d: 'Livré' }) : '{"error":"x"}' });
       const d = { pickup: 'En cours', delivered: 'Livré', refused: 'Refusé' }[b.a];
       st.orders.forEach((o) => { if (o.id === b.id) o.d = d; });
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, d }) });
@@ -218,6 +218,17 @@ test('espace livreur : si le chargement échoue, message clair + « Réessayer �
     fail = false;
     await page.click('button:has-text("Réessayer")');
     await page.waitForFunction(() => /Robe rouge/.test(document.getElementById('app').innerText), null, { timeout: 8000 });
+    assert.deepEqual(errors, []);
+  });
+});
+
+test('espace livreur : commande modifiée entre-temps -> message distinct de « déjà clôturée »', async (t) => {
+  await withPage(t, {}, async ({ page, base, st, errors }) => {
+    await page.goto(base + '/index.html?r=KKKKKKKKKK');
+    await page.waitForSelector('[data-act=spa][data-oid=o1][data-a=pickup]');
+    st.postStatus = 409; st.postBody = { error: 'commande modifiée à l’instant, réessaie' };
+    await page.click('[data-act=spa][data-oid=o1][data-a=pickup]');
+    await page.waitForFunction(() => /vient d’être modifiée/.test(document.getElementById('app').innerText), null, { timeout: 8000 });
     assert.deepEqual(errors, []);
   });
 });

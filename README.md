@@ -1,4 +1,4 @@
-# All In One — Amk Logistique (v10.5.1)
+# All In One — Amk Logistique (v10.5.2)
 Application web installable (PWA) de confirmation, livraison et suivi des commandes paiement à la livraison (COD) au Maroc.
 Données chiffrées sur le téléphone, suivi en direct et import automatique via Firebase (facultatifs).
 
@@ -39,6 +39,13 @@ La clé propriétaire donne les droits de publication et de lecture des suivis :
 Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Paramètres**.
 - **Compte** : deux onglets. *Gestion* = Pilotage de l'activité (Vendeurs partenaires, Finances & soldes, Automatisations) et Développement commercial (Catalogue produits, Réseau professionnel, Affaires & marges, Prévisions de revenus, Partenariat livraison). *Opérations* = Outils terrain (Codes QR & étiquettes NFC, Calculatrice) et Prospection (Carnet de prospects).
 - **Paramètres** : 8 rubriques indépendantes : Compte et profil · Tarifs et messages · Sécurité et confidentialité · Sauvegarde et données · Connexions · Carte · Langue · Aide et à propos (Mode d'emploi, Version & mises à jour).
+
+## Changements v10.5.2 : audit de sécurité
+- **Base** : retrait des droits inutiles (INSERT, DELETE, TRUNCATE, REFERENCES, TRIGGER) sur `order_events`, `order_replies` et `vendor_forms` pour les rôles connectés/anonymes (migration `supabase/applied/08_least_privilege_event_tables.sql`).
+- **Fonction `ingest` v3** (code désormais dans le dépôt) : la récupération de pages de produit refuse aussi les adresses IPv6 privées (y compris via un nom de domaine dont l'enregistrement AAAA vise le réseau interne), les plages réservées (100.64/10, 192.0.0/24, 198.18/15) et les noms sans enregistrement DNS ; le jeton WhatsApp n'est jamais renvoyé à un autre site après une redirection ; comparaison de signature à temps constant.
+- **Fonction `neworder` v2** (code dans le dépôt) : taille de la photo plafonnée avant tout décodage.
+- **Fonction `space` v2** : le changement de statut par le livreur est refusé si le propriétaire a modifié la commande entre-temps (aucun écrasement) ; message dédié côté appli.
+- Tests : 111 (fonctions simulées + Chromium), tous verts.
 
 ## Changements v10.5.1
 - Espace livreur / vendeur : si les commandes ne se chargent pas (réseau, serveur), la page affiche un message clair avec un bouton « Réessayer » au lieu de « Aucune livraison ».
