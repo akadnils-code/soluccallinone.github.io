@@ -46,6 +46,7 @@ Barre du bas : **Accueil · Confirmer · Commandes · Livraison · Compte · Par
 - **Fonction `neworder` v2** (code dans le dépôt) : taille de la photo plafonnée avant tout décodage.
 - **Fonction `space` v2** : le changement de statut par le livreur est refusé si le propriétaire a modifié la commande entre-temps (aucun écrasement) ; message dédié côté appli.
 - Tests : 111 (fonctions simulées + Chromium), tous verts.
+- **Fonctions d'aide des règles d'accès** (`has_role`, `is_member`, `is_platform_admin`) déplacées dans un schéma privé : elles ne sont plus appelables depuis l'extérieur (migration `supabase/applied/09_private_helpers.sql`). Avertissements de sécurité Supabase : 8 → 5, tous voulus (fonctions appelées par l'appli, qui vérifient elles-mêmes le rôle).
 
 ## Changements v10.5.1
 - Espace livreur / vendeur : si les commandes ne se chargent pas (réseau, serveur), la page affiche un message clair avec un bouton « Réessayer » au lieu de « Aucune livraison ».
